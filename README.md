@@ -21,10 +21,10 @@
 
 ## 👥 Équipe
 
- **Nibras Ounissi** 
- **Hana Fkiri** 
- **Marie Jlassi** 
- **Ferdaous Kachouri**
+ -Nibras Ounissi
+ -Hana Fkiri 
+ -Mariem Jlassi
+ -Ferdaous Kachouri
 ---
 
 ## 📋 Description du projet
@@ -203,18 +203,6 @@ Générés sur Google Colab depuis le dataset FAO ECOCROP (1 694 espèces, data 
 
 ---
 
-## 🔌 APIs utilisées
-
-| API | Usage | Clé |
-|---|---|---|
-| Sentinel-2 (ESA) | Images satellite NDVI | Non |
-| SoilGrids | pH + salinité sol | Non |
-| Open-Meteo | Température + précipitations | Non |
-| NASA POWER | Radiation + NDVI proxy | Non |
-| Carbonmark | Prix crédits carbone live | Oui |
-| Gemini 2.0 Flash | Enrichissement + réclamations | Oui |
-
----
 
 ## 📄 Licence
 

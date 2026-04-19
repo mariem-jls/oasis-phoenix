@@ -3,6 +3,7 @@ from flask import Flask, render_template
 from routes import register_blueprints
 from services.data_loader import get_dataframe
 
+
 app = Flask(__name__)
 
 

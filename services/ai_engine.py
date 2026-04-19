@@ -147,7 +147,9 @@ def run_ai_on_live(zone_name, so2_ug, no2_ug, co_ug, o3_ug):
         'cause_proba': 0.0,
         'risk_score': 0.0,
         'risk_level': '🟢 SAINE',
+        'current_ndvi': round(ndvi, 4),
         'ndvi_predicted_30d': round(ndvi, 4),
+        'ndvi_trend': 'stable',
         'so2_mol_m2': round(so2_mol, 10),
     }
 
@@ -186,5 +188,12 @@ def run_ai_on_live(zone_name, so2_ug, no2_ug, co_ug, o3_ug):
     risk = min(100, so2_score * 0.5 + ndvi_score * 0.3 + anom_bonus)
     result['risk_score'] = round(risk, 1)
     result['risk_level'] = '🔴 CRITIQUE' if risk >= 70 else '🟡 DÉGRADÉE' if risk >= 40 else '🟢 SAINE'
+    pred_ndvi = to_float(result.get('ndvi_predicted_30d', ndvi))
+    if pred_ndvi > ndvi:
+        result['ndvi_trend'] = 'improving'
+    elif pred_ndvi < ndvi:
+        result['ndvi_trend'] = 'degrading'
+    else:
+        result['ndvi_trend'] = 'stable'
 
     return result

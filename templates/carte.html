@@ -2,11 +2,12 @@
 <html lang="fr">
 <head>
   <meta charset="UTF-8">
-  <title>AI Healing Gabes</title>
+  <title>Oasis Phoenix | AI Healing Gabes</title>
   <link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css"/>
   <script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js"></script>
   <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
   <link href="https://fonts.googleapis.com/css2?family=Share+Tech+Mono&family=Exo+2:wght@300;600;800&display=swap" rel="stylesheet">
+  <script src="https://unpkg.com/leaflet.heat/dist/leaflet-heat.js"></script>
   <style>
     :root {
       --green:#00ff88; --yellow:#ffcc00; --red:#ff3355;
@@ -88,6 +89,125 @@
     .tox-alert  { border-color:rgba(255,204,0,0.6)!important; color:#ffe08a!important; }
     .tox-toxic  { border-color:rgba(255,51,85,0.8)!important; color:#ff9fb0!important; }
 
+    .map-hud {
+      position:absolute; top:56px; left:14px;
+      z-index:560; width:280px;
+      border:1px solid var(--border);
+      border-radius:12px;
+      background:linear-gradient(160deg,rgba(8,15,22,0.95),rgba(5,13,18,0.9));
+      backdrop-filter:blur(8px);
+      padding:12px;
+      box-shadow:0 16px 35px rgba(0,0,0,0.25);
+    }
+    .map-hud-title {
+      font-size:0.62rem;
+      letter-spacing:2px;
+      color:#71b493;
+      text-transform:uppercase;
+      font-family:'Share Tech Mono',monospace;
+      margin-bottom:8px;
+    }
+    .hud-top {
+      display:flex;
+      justify-content:space-between;
+      align-items:flex-end;
+      gap:8px;
+      margin-bottom:10px;
+      padding-bottom:9px;
+      border-bottom:1px solid rgba(0,255,136,0.15);
+    }
+    .hud-zone {
+      color:#e1ffe8;
+      font-size:0.82rem;
+      font-weight:700;
+      line-height:1.3;
+      max-width:180px;
+    }
+    .hud-risk {
+      font-family:'Share Tech Mono',monospace;
+      font-size:0.78rem;
+      color:#9cffc3;
+      white-space:nowrap;
+    }
+    .hud-grid {
+      display:grid;
+      grid-template-columns:repeat(2, 1fr);
+      gap:8px;
+      margin-bottom:10px;
+    }
+    .hud-chip {
+      border:1px solid rgba(0,255,136,0.12);
+      border-radius:8px;
+      padding:7px 8px;
+      background:rgba(0,255,136,0.03);
+    }
+    .hud-chip .v {
+      font-size:0.95rem;
+      color:#ddffea;
+      font-family:'Share Tech Mono',monospace;
+      line-height:1.1;
+    }
+    .hud-chip .k {
+      font-size:0.58rem;
+      letter-spacing:1px;
+      text-transform:uppercase;
+      color:#5e9378;
+      margin-top:2px;
+    }
+    .hud-legend {
+      display:flex;
+      gap:6px;
+      flex-wrap:wrap;
+    }
+    .hud-actions {
+      display:flex;
+      gap:7px;
+      margin-top:10px;
+      flex-wrap:wrap;
+    }
+    .hud-btn {
+      border:1px solid rgba(0,255,136,0.2);
+      background:rgba(0,255,136,0.06);
+      color:#bff4d4;
+      font-size:0.61rem;
+      letter-spacing:1px;
+      text-transform:uppercase;
+      font-family:'Share Tech Mono',monospace;
+      border-radius:999px;
+      padding:5px 9px;
+      cursor:pointer;
+      transition:background 0.2s ease, border-color 0.2s ease, transform 0.2s ease;
+    }
+    .hud-btn:hover {
+      background:rgba(0,255,136,0.15);
+      border-color:rgba(0,255,136,0.45);
+      transform:translateY(-1px);
+    }
+    .hud-pill {
+      font-size:0.58rem;
+      letter-spacing:1px;
+      text-transform:uppercase;
+      padding:4px 8px;
+      border-radius:999px;
+      border:1px solid transparent;
+      font-family:'Share Tech Mono',monospace;
+    }
+    .hud-pill.green {
+      color:#94ffc1;
+      border-color:rgba(0,255,136,0.35);
+      background:rgba(0,255,136,0.08);
+    }
+    .hud-pill.yellow {
+      color:#ffe799;
+      border-color:rgba(255,204,0,0.45);
+      background:rgba(255,204,0,0.08);
+    }
+    .hud-pill.red {
+      color:#ffb2bf;
+      border-color:rgba(255,51,85,0.55);
+      background:rgba(255,51,85,0.09);
+    }
+
     #ticker {
       position:absolute; bottom:16px; left:50%; transform:translateX(-50%);
       z-index:500; background:rgba(5,13,18,0.92);
@@ -107,7 +227,15 @@
     #panel::-webkit-scrollbar { width:3px; }
     #panel::-webkit-scrollbar-thumb { background:var(--border); }
 
-    .pcard { border-bottom:1px solid var(--border); padding:14px 16px; }
+    .pcard {
+      border-bottom:1px solid var(--border);
+      padding:14px 16px;
+      transition:background 0.25s ease, border-color 0.25s ease;
+    }
+    .pcard:hover {
+      background:rgba(0,255,136,0.02);
+      border-color:rgba(0,255,136,0.22);
+    }
     .pcard-title {
       font-size:0.6rem; letter-spacing:3px; text-transform:uppercase;
       color:#2a5a3a; margin-bottom:10px;
@@ -155,6 +283,66 @@
     .phoenix-key { font-size:0.7rem; color:#3a6a4a; }
     .phoenix-val { font-size:0.78rem; color:#b0f0c8; font-weight:600; text-align:right; max-width:170px; }
 
+    .leaderboard-wrap {
+      display:flex;
+      flex-direction:column;
+      gap:7px;
+    }
+    .lead-row {
+      border:1px solid rgba(0,255,136,0.13);
+      background:rgba(0,255,136,0.03);
+      border-radius:8px;
+      padding:7px 8px;
+      cursor:pointer;
+      transition:transform 0.2s ease, border-color 0.2s ease, background 0.2s ease;
+    }
+    .lead-row:hover {
+      transform:translateY(-1px);
+      border-color:rgba(0,255,136,0.4) !important;
+      background:rgba(0,255,136,0.09);
+    }
+    .lead-head {
+      display:flex;
+      justify-content:space-between;
+      align-items:center;
+      gap:8px;
+      margin-bottom:5px;
+      font-size:0.7rem;
+    }
+    .lead-zone {
+      color:#ddffea;
+      font-weight:600;
+      white-space:nowrap;
+      overflow:hidden;
+      text-overflow:ellipsis;
+    }
+    .lead-score {
+      color:#9cffc3;
+      font-family:'Share Tech Mono',monospace;
+      white-space:nowrap;
+    }
+    .lead-bar-bg {
+      height:5px;
+      border-radius:999px;
+      background:rgba(255,255,255,0.08);
+      overflow:hidden;
+      margin-bottom:4px;
+    }
+    .lead-bar-fill {
+      height:100%;
+      border-radius:999px;
+      transition:width 0.7s ease;
+    }
+    .lead-meta {
+      display:flex;
+      justify-content:space-between;
+      align-items:center;
+      gap:8px;
+      font-size:0.64rem;
+      color:#76a98c;
+      font-family:'Share Tech Mono',monospace;
+    }
+
     .anom-item {
       padding:7px 10px; margin-bottom:5px;
       border-left:2px solid var(--red);
@@ -185,13 +373,17 @@
     @media(max-width:980px) {
       #main { flex-direction:column; }
       #panel { width:100%; max-height:42vh; border-left:none; border-top:1px solid var(--border); }
+      .map-hud {
+        width:calc(100% - 28px);
+        max-width:420px;
+      }
     }
   </style>
 </head>
 <body>
 
 <div id="header">
-  <h1><span class="pulse-dot"></span>AI Healing Gabes — Surveillance Environnementale</h1>
+  <h1><span class="pulse-dot"></span>Oasis Phoenix — AI Healing Gabes</h1>
   <div class="hstats">
     <div class="hstat">
       <div class="hstat-val" id="s-total" style="color:var(--green)">—</div>
@@ -218,6 +410,29 @@
   <div id="map-wrap">
     <div id="map"></div>
     <div id="tox-banner" class="tox-normal">Toxicite live: chargement...</div>
+    <div id="map-hud" class="map-hud">
+      <div class="map-hud-title">Snapshot Live Zones</div>
+      <div class="hud-top">
+        <div class="hud-zone" id="hud-worst-zone">Zone a risque max: chargement...</div>
+        <div class="hud-risk" id="hud-worst-risk">0.0 / 100</div>
+      </div>
+      <div class="hud-grid">
+        <div class="hud-chip"><div class="v" id="hud-avg-risk">—</div><div class="k">Risque moyen</div></div>
+        <div class="hud-chip"><div class="v" id="hud-zone-count">—</div><div class="k">Zones suivies</div></div>
+        <div class="hud-chip"><div class="v" id="hud-critical-count">—</div><div class="k">A surveiller</div></div>
+        <div class="hud-chip"><div class="v" id="hud-anomaly-count">—</div><div class="k">Anomalies IA</div></div>
+      </div>
+      <div class="hud-legend">
+        <span class="hud-pill green" id="hud-pill-green">Saine &lt; 40</span>
+        <span class="hud-pill yellow" id="hud-pill-yellow">Degradee 40+</span>
+        <span class="hud-pill red" id="hud-pill-red">Critique 70+</span>
+      </div>
+      <div class="hud-actions">
+        <button id="focus-worst-btn" class="hud-btn">Focus zone max</button>
+        <button id="reset-view-btn" class="hud-btn">Vue Gabes</button>
+        <button id="toggle-heat-btn" class="hud-btn">Heatmap ON</button>
+      </div>
+    </div>
     <div id="scan-overlay"></div>
     <div id="scan-line"></div>
     <div id="ticker">AI HEALING GABES — SURVEILLANCE TEMPS REEL</div>
@@ -284,6 +499,12 @@
       <div class="metric"><span class="metric-label">Tendance</span><span class="metric-val" id="pred-trend">—</span></div>
     </div>
 
+    <!-- Leaderboard -->
+    <div class="pcard">
+      <div class="pcard-title">Classement risque live</div>
+      <div id="leaderboard" class="leaderboard-wrap"><div class="hint-msg">Calcul en cours...</div></div>
+    </div>
+
     <!-- Anomalies -->
     <div class="pcard">
       <div class="pcard-title">Anomalies IA detectees</div>
@@ -306,11 +527,15 @@
 const state = {
   latestGlobal:   null,
   liveZones:      {},
+  zoneAiData:     {},
+  thresholds:     { critical: 70, degraded: 40 },
+  globalPrediction: null,
   selectedZone:   null,
   historyChart:   null,
   anomalyMarkers: [],
   anomalyTimer:   null,
   perfMode:       false,
+  heatVisible:    true,
   polygons:       {}   // id -> { layer, zone }
 };
 
@@ -318,43 +543,86 @@ const state = {
 // ZONE METADATA — 13 delegations officielles du gouvernorat
 // ================================================================
 const ZONE_META = {
-  "Gabes Medina":     { baseRisk: 65, description: "Centre ville historique — exposition directe aux emissions industrielles" },
-  "Gabes Ouest":      { baseRisk: 78, description: "Proximite immediate de la zone industrielle GCT" },
-  "Gabes Sud":        { baseRisk: 42, description: "Zone residentielle sud — Cite Adhahra, Cite Basboussa" },
-  "Ghannouch":        { baseRisk: 92, description: "Zone industrielle GCT — source principale SO2 et phosphogypse" },
-  "El Hamma":         { baseRisk: 14, description: "Source thermale — tres faible exposition industrielle" },
-  "Mareth":           { baseRisk: 20, description: "Zone agricole cotiere — eloignee de l industrie" },
-  "Matmata":          { baseRisk:  8, description: "Zone montagneuse berbere — tres faible pollution" },
-  "Nouvelle Matmata": { baseRisk: 10, description: "Zone rurale montagneuse" },
-  "Metouia":          { baseRisk: 25, description: "Delegation agricole — elevage et cultures cerealieres" },
-  "Menzel El Habib":  { baseRisk: 16, description: "Zone rurale — faible impact industriel" },
-  "El Ogla":          { baseRisk: 22, description: "Zone oasis interieure" },
-  "Ouedhref":         { baseRisk: 12, description: "Zone rurale sud desertique" },
-  "Smar":             { baseRisk: 30, description: "Zone mixte agriculture et residentiel" }
+  "Gabes Medina":      { baseRisk: 0, description: "Centre ville historique — exposition directe aux emissions industrielles" },
+  "Gabes Ouest":       { baseRisk: 0, description: "Proximite immediate de la zone industrielle GCT" },
+  "Gabes Sud":         { baseRisk: 0, description: "Zone residentielle sud — Cite Adhahra, Cite Basboussa" },
+  "Ghannouch":         { baseRisk: 0, description: "Zone industrielle GCT — source principale SO2 et phosphogypse" },
+  "El Hamma":          { baseRisk: 0, description: "Source thermale — tres faible exposition industrielle" },
+  "Mareth":            { baseRisk: 0, description: "Zone agricole cotiere — eloignee de l industrie" },
+  "Matmata":           { baseRisk: 0, description: "Zone montagneuse berbere — tres faible pollution" },
+  "Nouvelle Matmata":  { baseRisk: 0, description: "Zone rurale montagneuse" },
+  "Metouia":           { baseRisk: 0, description: "Delegation agricole — elevage et cultures cerealieres" },
+  "Menzel El Habib":   { baseRisk: 0, description: "Zone rurale — faible impact industriel" },
+  "El Ogla":           { baseRisk: 0, description: "Zone oasis interieure" },
+  "Ouedhref":          { baseRisk: 0, description: "Zone rurale sud desertique" },
+  "Smar":              { baseRisk: 0, description: "Zone mixte agriculture et residentiel" },
+  "Zone Industrielle": { baseRisk: 0, description: "Coeur zone GCT — SO2 maximal, phosphogypse" },
+  "Oued Gabes":        { baseRisk: 0, description: "Embouchure oued — pollution industrielle aval" },
+  "Chenini Nahal":     { baseRisk: 0, description: "Oasis historique — pression urbaine croissante" },
+  "Kettana":           { baseRisk: 0, description: "Zone periurbaine — urbanisation illicite detectee" },
+  "El Akarit":         { baseRisk: 0, description: "Zone agricole nord — irrigation oued Akarit" },
+  "El Metouia Coast":  { baseRisk: 0, description: "Littoral nord — impact phosphogypse marin" },
+  "Bou Attouche":      { baseRisk: 0, description: "Zone rurale interieure — faible exposition" },
+  "Chott El Fejij":    { baseRisk: 0, description: "Zone saline — stress hydrique chronique" }
 };
+
+let ZONES_EXTRA = [
+  {name:'Zone Industrielle', lat:33.93, lon:10.07},
+  {name:'Oued Gabes',        lat:33.88, lon:10.08},
+  {name:'Chenini Nahal',     lat:33.78, lon:10.02},
+  {name:'Kettana',           lat:33.82, lon:9.98},
+  {name:'El Akarit',         lat:34.08, lon:10.08},
+  {name:'El Metouia Coast',  lat:34.00, lon:10.12},
+  {name:'Bou Attouche',      lat:33.72, lon:9.88},
+  {name:'Chott El Fejij',    lat:33.65, lon:9.75},
+];
+
+const OFFICIAL_GABES_ZONES = new Set([
+  'Ghannouch', 'Gabes Medina', 'Gabes Ouest', 'Gabes Sud',
+  'Mareth', 'El Hamma', 'Metouia', 'Menzel El Habib',
+  'Matmata', 'Nouvelle Matmata', 'El Ogla', 'Ouedhref', 'Smar'
+]);
 
 // ================================================================
 // HELPERS
 // ================================================================
 function riskColor(r) {
-  if (r >= 70) return '#ff3355';
-  if (r >= 40) return '#ffcc00';
+  if (r >= state.thresholds.critical) return '#ff3355';
+  if (r >= state.thresholds.degraded) return '#ffcc00';
   return '#00ff88';
 }
 function riskLabel(r) {
-  if (r >= 70) return 'CRITIQUE';
-  if (r >= 40) return 'DEGRADEE';
+  if (r >= state.thresholds.critical) return 'CRITIQUE';
+  if (r >= state.thresholds.degraded) return 'DEGRADEE';
   return 'SAINE';
 }
 function riskClass(r) {
-  if (r >= 70) return 'rb-red';
-  if (r >= 40) return 'rb-yellow';
+  if (r >= state.thresholds.critical) return 'rb-red';
+  if (r >= state.thresholds.degraded) return 'rb-yellow';
   return 'rb-green';
 }
 function riskEmoji(r) {
-  if (r >= 70) return '🔴';
-  if (r >= 40) return '🟡';
+  if (r >= state.thresholds.critical) return '🔴';
+  if (r >= state.thresholds.degraded) return '🟡';
   return '🟢';
+}
+
+function getRiskByName(name, baseRisk = 0) {
+  const ai = state.zoneAiData[name] || {};
+  const aiRisk = parseFloat(ai.risk_score);
+  if (!Number.isNaN(aiRisk) && aiRisk >= 0) {
+    return Math.min(100, aiRisk * 0.5 + baseRisk * 0.5);
+  }
+  return baseRisk;
+}
+
+function getZoneRisk(zone) {
+  return getRiskByName(zone.name, zone.baseRisk);
+}
+
+function getExtraZoneRisk(z) {
+  const baseRisk = (ZONE_META[z.name] || { baseRisk: 30 }).baseRisk;
+  return getRiskByName(z.name, baseRisk);
 }
 
 function fetchJson(url, ms = 7000) {
@@ -380,12 +648,169 @@ function updateToxBanner(level, score, zone) {
   el.textContent = 'Toxicite live: ' + (level || 'N/A') + ' (' + parseFloat(score || 0).toFixed(1) + '/100) — Zone: ' + (zone || 'N/A');
 }
 
+function getAllTrackedZones() {
+  const mapZones = Object.values(state.polygons).map(p => p.zone);
+  const known = new Set(mapZones.map(z => z.name));
+
+  ZONES_EXTRA.forEach(z => {
+    if (known.has(z.name)) return;
+    const meta = ZONE_META[z.name] || { baseRisk: 30, description: '' };
+    mapZones.push({
+      id: z.name.toLowerCase().replace(/\s+/g, '_'),
+      name: z.name,
+      baseRisk: meta.baseRisk,
+      description: meta.description,
+      lat: z.lat,
+      lon: z.lon
+    });
+    known.add(z.name);
+  });
+
+  return mapZones;
+}
+
+function getTrendLabel(zoneName) {
+  const trend = String((state.zoneAiData[zoneName] || {}).ndvi_trend || '').toLowerCase();
+  if (trend === 'degrading') return 'NDVI ↓';
+  if (trend === 'improving') return 'NDVI ↑';
+  return 'NDVI =';
+}
+
+function renderLeaderboard() {
+  const container = document.getElementById('leaderboard');
+  if (!container) return;
+
+  const rows = getAllTrackedZones()
+    .map(z => ({
+      name: z.name,
+      risk: getRiskByName(z.name, z.baseRisk)
+    }))
+    .sort((a, b) => b.risk - a.risk)
+    .slice(0, 8);
+
+  if (!rows.length) {
+    container.innerHTML = '<div class="hint-msg">Aucune zone disponible</div>';
+    return;
+  }
+
+  container.innerHTML = rows.map((r, idx) => {
+    const col = riskColor(r.risk);
+    const bar = Math.min(100, Math.max(4, r.risk));
+    return (
+      '<div class="lead-row" data-zone="' + r.name.replace(/"/g, '&quot;') + '" style="border-color:' + col + '40">' +
+      '<div class="lead-head">' +
+      '<span class="lead-zone">#' + (idx + 1) + ' ' + r.name + '</span>' +
+      '<span class="lead-score" style="color:' + col + '">' + r.risk.toFixed(1) + '/100</span>' +
+      '</div>' +
+      '<div class="lead-bar-bg"><div class="lead-bar-fill" style="width:' + bar + '%;background:linear-gradient(90deg,' + col + '55,' + col + ')"></div></div>' +
+      '<div class="lead-meta"><span>' + riskEmoji(r.risk) + ' ' + riskLabel(r.risk) + '</span><span>' + getTrendLabel(r.name) + '</span></div>' +
+      '</div>'
+    );
+  }).join('');
+
+  container.querySelectorAll('.lead-row').forEach(row => {
+    row.addEventListener('click', () => {
+      const zoneName = row.getAttribute('data-zone');
+      focusZoneByName(zoneName);
+    });
+  });
+}
+
+function refreshHud() {
+  const zones = getAllTrackedZones().map(z => ({ name: z.name, risk: getRiskByName(z.name, z.baseRisk) }));
+  if (!zones.length) return;
+
+  const sorted = zones.slice().sort((a, b) => b.risk - a.risk);
+  const worst = sorted[0];
+  const avg = zones.reduce((acc, z) => acc + z.risk, 0) / zones.length;
+  const critical = zones.filter(z => z.risk >= state.thresholds.critical).length;
+  const degraded = zones.filter(z => z.risk >= state.thresholds.degraded && z.risk < state.thresholds.critical).length;
+
+  const anomalyCount = Object.values(state.zoneAiData).filter(r => Boolean(r.is_anomaly)).length;
+
+  document.getElementById('hud-worst-zone').textContent = 'Zone a risque max: ' + worst.name;
+  document.getElementById('hud-worst-risk').textContent = worst.risk.toFixed(1) + ' / 100';
+  document.getElementById('hud-avg-risk').textContent = avg.toFixed(1);
+  document.getElementById('hud-zone-count').textContent = String(zones.length);
+  document.getElementById('hud-critical-count').textContent = String(critical + degraded);
+  document.getElementById('hud-anomaly-count').textContent = String(anomalyCount);
+
+  const d = state.thresholds.degraded;
+  const c = state.thresholds.critical;
+  document.getElementById('hud-pill-green').textContent = 'Saine < ' + d;
+  document.getElementById('hud-pill-yellow').textContent = 'Degradee ' + d + '+';
+  document.getElementById('hud-pill-red').textContent = 'Critique ' + c + '+';
+}
+
+function refreshInsightUx() {
+  renderLeaderboard();
+  refreshHud();
+}
+
+function focusZoneByName(zoneName) {
+  if (!zoneName) return;
+  const zoneId = zoneName.toLowerCase().replace(/\s+/g, '_');
+  const polygonEntry = state.polygons[zoneId];
+
+  if (polygonEntry) {
+    selectZone(polygonEntry.zone, polygonEntry.layer);
+    map.fitBounds(polygonEntry.layer.getBounds(), { padding: [40, 40], maxZoom: 11 });
+    return;
+  }
+
+  const extra = ZONES_EXTRA.find(z => z.name === zoneName);
+  if (extra) {
+    const marker = extraMarkers[zoneName];
+    map.setView([extra.lat, extra.lon], 11, { animate: true });
+    if (marker) marker.openPopup();
+  }
+}
+
+function focusWorstZone() {
+  const zones = getAllTrackedZones()
+    .map(z => ({ name: z.name, risk: getRiskByName(z.name, z.baseRisk) }))
+    .sort((a, b) => b.risk - a.risk);
+  if (!zones.length) return;
+  focusZoneByName(zones[0].name);
+}
+
+function resetGabesView() {
+  if (gabesBounds) {
+    map.fitBounds(gabesBounds, { padding: [30, 30] });
+    return;
+  }
+  map.setView([33.75, 9.95], 9);
+}
+
+function toggleHeatmap() {
+  const btn = document.getElementById('toggle-heat-btn');
+  state.heatVisible = !state.heatVisible;
+
+  if (!state.heatVisible && heatLayer && map.hasLayer(heatLayer)) {
+    map.removeLayer(heatLayer);
+  }
+  if (state.heatVisible && heatLayer && !map.hasLayer(heatLayer)) {
+    heatLayer.addTo(map);
+  }
+
+  if (btn) btn.textContent = state.heatVisible ? 'Heatmap ON' : 'Heatmap OFF';
+}
+
 // ================================================================
 // MAP INIT
 // ================================================================
 const map = L.map('map', { zoomControl: false }).setView([33.75, 9.95], 9);
-L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png', {
-  attribution: '© OSM', maxZoom: 18
+let gabesBounds = null;
+// Satellite base
+L.tileLayer('https://server.arcgisonline.com/ArcGIS/rest/services/World_Imagery/MapServer/tile/{z}/{y}/{x}', {
+    attribution: 'Tiles © Esri',
+    maxZoom: 19
+}).addTo(map);
+
+// Labels overlay
+L.tileLayer('https://server.arcgisonline.com/ArcGIS/rest/services/Reference/World_Boundaries_and_Places/MapServer/tile/{z}/{y}/{x}', {
+    maxZoom: 19,
+    opacity: 0.8
 }).addTo(map);
 L.control.zoom({ position: 'bottomright' }).addTo(map);
 
@@ -402,29 +827,30 @@ fetch('/static/gabes_delegations.geojson')
   .then(geojson => {
     const geoLayer = L.geoJSON(geojson, {
       style: feature => {
-        const name = feature.properties.name;
-        const meta = ZONE_META[name] || { baseRisk: 30 };
-        const risk = feature.properties.baseRisk || meta.baseRisk;
-        return {
-          color:       riskColor(risk),
-          fillColor:   riskColor(risk),
-          fillOpacity: 0.28,
-          weight:      1.5,
-          opacity:     0.85
-        };
-      },
+  const name = feature.properties.name;
+  const meta = ZONE_META[name] || { baseRisk: 30 };
+  return {
+    color:       riskColor(meta.baseRisk),
+    fillOpacity: 0,
+    weight:      2,
+    opacity:     0.7,
+    dashArray:   '6, 4',
+  };
+},
       onEachFeature: (feature, layer) => {
         const rawName = feature.properties.name;
         const meta    = ZONE_META[rawName] || { baseRisk: feature.properties.baseRisk || 30, description: '' };
+        const center  = layer.getBounds().getCenter();
         const zone    = {
           id:          rawName.toLowerCase().replace(/\s+/g, '_'),
           name:        rawName,
           baseRisk:    meta.baseRisk,
-          description: meta.description
+          description: meta.description,
+          lat:         center.lat,
+          lon:         center.lng,
         };
 
         // Label centroid
-        const center = layer.getBounds().getCenter();
         const labelIcon = L.divIcon({
           className: '',
           html: '<div style="' +
@@ -458,6 +884,7 @@ fetch('/static/gabes_delegations.geojson')
 
     // Fit to Gabes governorate bounds
     map.fitBounds(geoLayer.getBounds(), { padding: [30, 30] });
+    buildHeatmap();
 
     document.getElementById('ticker').textContent = 'GABES — ' + Object.keys(state.polygons).length + ' DELEGATIONS CHARGEES — CLIQUER POUR DETAIL';
 
@@ -473,6 +900,46 @@ fetch('/static/gabes_delegations.geojson')
   });
 
 // ================================================================
+// EXTRA ZONE MARKERS
+// ================================================================
+const extraMarkers = {};
+
+function addExtraMarker(z) {
+  if (extraMarkers[z.name]) return;
+  const meta = ZONE_META[z.name] || { baseRisk: 30, description: '' };
+  const col = riskColor(meta.baseRisk);
+  const marker = L.circleMarker([z.lat, z.lon], {
+    radius: 8, color: col, fillColor: col, fillOpacity: 0.8, weight: 2
+  }).addTo(map);
+  marker.bindPopup('Chargement...');
+  extraMarkers[z.name] = marker;
+}
+
+ZONES_EXTRA.forEach(addExtraMarker);
+
+function updateExtraMarkers() {
+  ZONES_EXTRA.forEach(z => {
+    const marker = extraMarkers[z.name];
+    if (!marker) return;
+    const ai = state.zoneAiData[z.name] || {};
+    const risk = getExtraZoneRisk(z);
+    const col = riskColor(risk);
+    marker.setStyle({ color: col, fillColor: col });
+    marker.setPopupContent(
+      '<div style="font-family:Share Tech Mono,monospace;font-size:11px;color:' + col + ';background:#050d12;padding:8px;min-width:180px">' +
+      '<b>' + z.name + '</b><br><br>' +
+      'Risque: <b>' + risk.toFixed(1) + '/100</b><br>' +
+      'Statut: <b>' + riskLabel(risk) + '</b><br>' +
+      'Cause: ' + (ai.cause || 'N/A') + '<br>' +
+      'SO2: ' + parseFloat(ai.so2_ug_m3 || 0).toFixed(2) + ' ug/m3<br>' +
+      'AQI: ' + (ai.european_aqi || 'N/A') + '<br>' +
+      'NDVI predit: ' + parseFloat(ai.ndvi_predicted_30d || 0).toFixed(4) +
+      '</div>'
+    );
+  });
+}
+
+// ================================================================
 // SELECT ZONE
 // ================================================================
 function selectZone(zone, layer) {
@@ -480,9 +947,10 @@ function selectZone(zone, layer) {
   if (state.selectedZone) {
     const prev = state.polygons[state.selectedZone.id];
     if (prev) {
+      const prevRisk = getZoneRisk(prev.zone);
       prev.layer.setStyle({
-        color:       riskColor(prev.zone.baseRisk),
-        fillColor:   riskColor(prev.zone.baseRisk),
+        color:       riskColor(prevRisk),
+        fillColor:   riskColor(prevRisk),
         fillOpacity: 0.28,
         weight:      1.5
       });
@@ -490,11 +958,12 @@ function selectZone(zone, layer) {
   }
 
   state.selectedZone = zone;
+  const zoneRisk = getZoneRisk(zone);
 
   // Highlight
   layer.setStyle({
     color:       '#ffffff',
-    fillColor:   riskColor(zone.baseRisk),
+    fillColor:   riskColor(zoneRisk),
     fillOpacity: 0.55,
     weight:      3
   });
@@ -503,7 +972,7 @@ function selectZone(zone, layer) {
   document.getElementById('panel').scrollTop = 0;
 
   // Update panel
-  document.getElementById('zone-header').textContent = riskEmoji(zone.baseRisk) + ' ' + zone.name;
+  document.getElementById('zone-header').textContent = riskEmoji(zoneRisk) + ' ' + zone.name;
   document.getElementById('zone-desc').textContent   = zone.description;
 
   renderZonePanel(zone);
@@ -517,29 +986,17 @@ function renderZonePanel(zone) {
   if (!g) return;
 
   const live = state.liveZones[zone.name] || {};
+  const ai   = state.zoneAiData[zone.name] || {};
   const tox  = (live.toxicity) || (g.toxicity) || {};
+  const zoneRisk = getZoneRisk(zone);
 
-  // Zone-specific risk computation
-  const globalRisk = parseFloat(g.health_risk || 0);
-  const liveToxRisk = parseFloat((tox).risk_score || 0);
-  const zoneRisk = Math.min(100,
-    zone.baseRisk * 0.50 +
-    globalRisk    * 0.30 +
-    liveToxRisk   * 0.20
-  );
-
-  // SO2 factor — GCT and Gabes Ouest are directly downwind
-  const so2Factor = zone.id === 'ghannouch' ? 2.8
-                  : zone.id === 'gabes_ouest' ? 1.6
-                  : zone.id === 'gabes_medina' ? 1.3
-                  : 1.0;
-
-  const so2  = parseFloat(live.so2_ug_m3 || g.SO2_live_ug_m3 || 0) * so2Factor;
+  const so2  = parseFloat(live.so2_ug_m3 || g.SO2_live_ug_m3 || 0);
   const no2  = parseFloat(live.no2_ug_m3 || g.NO2_live_ug_m3 || 0);
   const co   = parseFloat(live.co_ug_m3  || g.CO_live_ug_m3  || 0);
   const o3   = parseFloat(live.o3_ug_m3  || g.O3_live_ug_m3  || 0);
   const aer  = parseFloat(g.AER || 0);
-  const ndvi = Math.max(0, parseFloat(g.NDVI || 0) * (1.0 - zone.baseRisk / 280));
+  const ndviCurrent = parseFloat(ai.current_ndvi || g.NDVI || 0);
+  const ndviPred = parseFloat(ai.ndvi_predicted_30d || ndviCurrent);
 
   // Badge
   document.getElementById('risk-badge-wrap').innerHTML =
@@ -547,14 +1004,28 @@ function renderZonePanel(zone) {
 
   // Metrics
   document.getElementById('c-date').textContent  = (live.timestamp || g.date || '—').toString().slice(0, 10);
-  document.getElementById('c-ndvi').textContent  = ndvi.toFixed(4);
+  document.getElementById('c-ndvi').textContent  = ndviCurrent.toFixed(4);
   document.getElementById('c-ndwi').textContent  = parseFloat(g.NDWI || 0).toFixed(4);
   document.getElementById('c-temp').textContent  = parseFloat(g.temp || 0).toFixed(1) + ' C';
   document.getElementById('c-soil').textContent  = (parseFloat(g.soil_moisture || 0) * 100).toFixed(1) + '%';
   document.getElementById('c-risk').textContent  = zoneRisk.toFixed(1) + ' / 100';
-  document.getElementById('c-cause').textContent = g.cause || 'N/A';
+  document.getElementById('c-cause').textContent = ai.cause || g.cause || 'N/A';
   document.getElementById('c-toxic').textContent = (tox.level || 'N/A') + ' (' + parseFloat(tox.risk_score || 0).toFixed(1) + ')';
-  document.getElementById('pred-now').textContent = ndvi.toFixed(4);
+  document.getElementById('pred-now').textContent = ndviCurrent.toFixed(4);
+  document.getElementById('pred-fut').textContent = ndviPred.toFixed(4);
+
+  const trendEl = document.getElementById('pred-trend');
+  const trendRaw = String(ai.ndvi_trend || '').toLowerCase();
+  if (trendRaw === 'improving' || (!trendRaw && ndviPred > ndviCurrent)) {
+    trendEl.textContent = 'Amelioration';
+    trendEl.className = 'metric-val trend-up';
+  } else if (trendRaw === 'degrading' || (!trendRaw && ndviPred < ndviCurrent)) {
+    trendEl.textContent = 'Degradation';
+    trendEl.className = 'metric-val trend-down';
+  } else {
+    trendEl.textContent = 'Stable';
+    trendEl.className = 'metric-val';
+  }
 
   // Gas bars
   document.getElementById('g-so2').textContent = so2.toFixed(2) + ' ug/m3';
@@ -569,32 +1040,12 @@ function renderZonePanel(zone) {
   document.getElementById('b-o3').style.width  = Math.min(100, (o3  / 100)  * 100) + '%';
   document.getElementById('b-aer').style.width = Math.min(100, Math.max(0, (aer + 3) / 8 * 100)) + '%';
 
-  // Phoenix — zone-aware
-  let plante, revenu, carbone, delai, action;
-  if (zoneRisk >= 70) {
-    plante  = 'Atriplex halimione';
-    revenu  = '800 TND/an';
-    carbone = '4 T CO2/an';
-    delai   = '6 mois';
-    action  = 'Plantation urgente — barriere anti-pollution';
-  } else if (zoneRisk >= 40) {
-    plante  = 'Paulownia';
-    revenu  = '3 350 TND/an';
-    carbone = '12 T CO2/an';
-    delai   = '18 mois';
-    action  = 'Reboisement prioritaire — corridor ecologique';
-  } else {
-    plante  = 'Moringa oleifera';
-    revenu  = '1 200 TND/an';
-    carbone = '8 T CO2/an';
-    delai   = '12 mois';
-    action  = 'Surveillance normale — renforcement biodiversite';
-  }
-  document.getElementById('p-plante').textContent  = plante;
-  document.getElementById('p-revenu').textContent  = revenu;
-  document.getElementById('p-carbone').textContent = carbone;
-  document.getElementById('p-delai').textContent   = delai;
-  document.getElementById('p-action').textContent  = action;
+  const phoenix = g.phoenix || {};
+  document.getElementById('p-plante').textContent  = phoenix.plante  || '—';
+  document.getElementById('p-revenu').textContent  = phoenix.revenu  || '—';
+  document.getElementById('p-carbone').textContent = phoenix.carbone || '—';
+  document.getElementById('p-delai').textContent   = phoenix.delai   || '—';
+  document.getElementById('p-action').textContent  = phoenix.action  || '—';
 
   // Update polygon color dynamically
   const p = state.polygons[zone.id];
@@ -606,56 +1057,58 @@ function renderZonePanel(zone) {
 // ================================================================
 // REFRESH POLYGON COLORS (called after live data update)
 // ================================================================
-function refreshPolygonColors() {
-  if (!state.latestGlobal) return;
-  const globalRisk = parseFloat(state.latestGlobal.health_risk || 0);
+let heatLayer = null;
 
-  Object.values(state.polygons).forEach(({ layer, zone }) => {
-    if (state.selectedZone && state.selectedZone.id === zone.id) return;
-    const live     = state.liveZones[zone.name] || {};
-    const toxRisk  = parseFloat((live.toxicity || {}).risk_score || 0);
-    const dynRisk  = Math.min(100, zone.baseRisk * 0.50 + globalRisk * 0.30 + toxRisk * 0.20);
-    const color    = riskColor(dynRisk);
-    layer.setStyle({ color, fillColor: color, fillOpacity: 0.28, weight: 1.5 });
-  });
-}
+function buildHeatmap() {
+  const points = [];
+  const OFFSETS = [
+    [0.00, 0.00], [0.02, 0.00], [-0.02, 0.00], [0.00, 0.02], [0.00, -0.02],
+    [0.015, 0.015], [0.015, -0.015], [-0.015, 0.015], [-0.015, -0.015]
+  ];
 
-// ================================================================
-// ANOMALY MARKERS
-// ================================================================
-function addAnomalyMarkers(anomalies) {
-  state.anomalyMarkers.forEach(m => anomalyLayer.removeLayer(m));
-  state.anomalyMarkers = [];
-  if (state.anomalyTimer) { clearInterval(state.anomalyTimer); state.anomalyTimer = null; }
-
-  anomalies.forEach(a => {
-    const lat = 33.55 + Math.random() * 0.55;
-    const lng = 9.60  + Math.random() * 0.65;
-    const m   = L.circleMarker([lat, lng], {
-      radius: 6, color: '#ff3355', fillColor: '#ff3355', fillOpacity: 0.85, weight: 1
-    }).addTo(anomalyLayer);
-    state.anomalyMarkers.push(m);
-    m.bindPopup(
-      '<div style="font-family:Share Tech Mono,monospace;font-size:11px;color:#ff3355;background:#050d12;padding:6px">' +
-      '<b>ANOMALIE IA</b><br>' +
-      'Date: ' + a.date + '<br>' +
-      'Cause: ' + a.cause + '<br>' +
-      'Score: ' + parseFloat(a.anomaly_score).toFixed(3) + '<br>' +
-      'SO2: ' + (parseFloat(a.SO2_column_number_density) * 1e6).toFixed(2) + '<br>' +
-      'NDVI: ' + parseFloat(a.NDVI).toFixed(4) +
-      '</div>'
-    );
+  // Polygon zones — use live AI risk
+  Object.values(state.polygons).forEach(({ zone }) => {
+    const risk = getZoneRisk(zone);
+    const intensity = risk / 100;
+    OFFSETS.forEach(([dLat, dLon]) => {
+      points.push([
+        zone.lat + dLat,
+        zone.lon + dLon,
+        intensity
+      ]);
+    });
   });
 
-  if (!state.perfMode && state.anomalyMarkers.length > 0) {
-    let big = true;
-    state.anomalyTimer = setInterval(() => {
-      big = !big;
-      state.anomalyMarkers.forEach(m => m.setStyle({ radius: big ? 8 : 5, fillOpacity: big ? 0.9 : 0.35 }));
-    }, 900);
-  }
-}
+  // Extra zones — also use live AI risk
+  ZONES_EXTRA.forEach(z => {
+    const risk = getExtraZoneRisk(z);
 
+    const intensity = risk / 100;
+    OFFSETS.forEach(([dLat, dLon]) => {
+      points.push([
+        z.lat + dLat,
+        z.lon + dLon,
+        intensity
+      ]);
+    });
+  });
+
+  if (heatLayer) map.removeLayer(heatLayer);
+  heatLayer = L.heatLayer(points, {
+    radius:  45,
+    blur:    35,
+    maxZoom: 13,
+    max:     1.0,
+    gradient: {
+      0.0:  '#00ff88',
+      0.4:  '#00ff88',
+      0.45: '#ffcc00',
+      0.7:  '#ffcc00',
+      0.75: '#ff3355',
+      1.0:  '#ff3355',
+    }
+  }).addTo(map);
+}
 // ================================================================
 // API CALLS
 // ================================================================
@@ -677,6 +1130,7 @@ async function refreshCore() {
     document.getElementById('s-ndvi').textContent      = Number(stats.avg_ndvi      || 0).toFixed(4);
 
     refreshPolygonColors();
+    refreshInsightUx();
     if (state.selectedZone) renderZonePanel(state.selectedZone);
 
   } catch (e) {
@@ -691,26 +1145,85 @@ async function refreshLive() {
     zones.forEach(z => { mapped[z.zone] = z; });
     state.liveZones = mapped;
     refreshPolygonColors();
+    refreshInsightUx();
     if (state.selectedZone) renderZonePanel(state.selectedZone);
   } catch (e) { /* keep last */ }
+}
+
+async function loadRealZoneData() {
+  try {
+    const rows = await fetchJson('/api/zones/ai');
+    const mapped = {};
+    rows.forEach(r => { mapped[r.zone] = r; });
+    state.zoneAiData = mapped;
+    updateExtraMarkers();
+    refreshPolygonColors();
+    buildHeatmap();
+    refreshInsightUx();
+    if (state.selectedZone) renderZonePanel(state.selectedZone);
+  } catch (e) { /* keep last */ }
+}
+
+function refreshPolygonColors() {
+  Object.values(state.polygons).forEach(({ layer, zone }) => {
+    if (state.selectedZone && state.selectedZone.id === zone.id) return;
+    const risk = getZoneRisk(zone);
+    layer.setStyle({ color: riskColor(risk), dashArray: '6, 4', weight: 2, fillOpacity: 0 });
+  });
+}
+
+async function syncExtraZonesFromApi() {
+  try {
+    const payload = await fetchJson('/api/zones');
+    const rows = Array.isArray(payload.zones) ? payload.zones : [];
+    let added = false;
+
+    rows.forEach(z => {
+      const name = String(z.name || '').trim();
+      const lat = parseFloat(z.lat);
+      const lon = parseFloat(z.lon);
+      if (!name || Number.isNaN(lat) || Number.isNaN(lon)) return;
+      if (OFFICIAL_GABES_ZONES.has(name)) return;
+      if (ZONES_EXTRA.some(e => e.name === name)) return;
+
+      ZONES_EXTRA.push({ name, lat, lon });
+      addExtraMarker({ name, lat, lon });
+      added = true;
+    });
+
+    if (added) {
+      updateExtraMarkers();
+      buildHeatmap();
+      refreshInsightUx();
+    }
+  } catch (e) { /* keep current zones */ }
 }
 
 async function refreshPrediction() {
   try {
     const d  = await fetchJson('/api/predict');
-    document.getElementById('pred-fut').textContent = parseFloat(d.predicted_ndvi || 0).toFixed(4);
-    const el = document.getElementById('pred-trend');
-    if (d.trend === 'improving') { el.textContent = 'Amelioration'; el.className = 'metric-val trend-up'; }
-    else                         { el.textContent = 'Degradation';  el.className = 'metric-val trend-down'; }
+    state.globalPrediction = d;
+
+    // Keep prediction panel coherent: only render global prediction when no zone is selected.
+    if (!state.selectedZone) {
+      document.getElementById('pred-now').textContent = parseFloat(d.current_ndvi || 0).toFixed(4);
+      document.getElementById('pred-fut').textContent = parseFloat(d.predicted_ndvi || 0).toFixed(4);
+      const el = document.getElementById('pred-trend');
+      if (d.trend === 'improving') { el.textContent = 'Amelioration'; el.className = 'metric-val trend-up'; }
+      else                         { el.textContent = 'Degradation';  el.className = 'metric-val trend-down'; }
+    }
   } catch (e) {
-    document.getElementById('pred-fut').textContent   = '—';
-    document.getElementById('pred-trend').textContent = 'Indisponible';
+    if (!state.selectedZone) {
+      document.getElementById('pred-now').textContent   = '—';
+      document.getElementById('pred-fut').textContent   = '—';
+      document.getElementById('pred-trend').textContent = 'Indisponible';
+    }
   }
 }
 
 async function refreshAnomalies() {
   try {
-    const data = await fetchJson('/api/anomalies/live?recent_days=365');
+    const data = await fetchJson('/api/anomalies/live');
     const list = document.getElementById('anom-list');
     list.innerHTML = '';
     if (!data.length) {
@@ -721,10 +1234,10 @@ async function refreshAnomalies() {
       const div = document.createElement('div');
       div.className = 'anom-item';
       div.innerHTML =
-        '<div class="anom-date">' + a.date + '</div>' +
-        '<div class="anom-vals">SO2: ' + (parseFloat(a.SO2_column_number_density) * 1e6).toFixed(2) +
-        ' | NDVI: ' + parseFloat(a.NDVI).toFixed(3) +
-        ' | ' + a.cause + '</div>';
+        '<div class="anom-date">' + String(a.timestamp || 'N/A').slice(0, 19).replace('T', ' ') + '</div>' +
+        '<div class="anom-vals">' + (a.zone || 'N/A') +
+        ' | SO2: ' + parseFloat(a.so2_ug_m3 || 0).toFixed(2) + ' ug/m3' +
+        ' | ' + (a.risk_level || 'N/A') + '</div>';
       list.appendChild(div);
     });
     addAnomalyMarkers(data);
@@ -764,6 +1277,53 @@ async function refreshHistory() {
   } catch (e) { /* keep previous */ }
 }
 
+async function loadBaseRisks() {
+  try {
+    const risks = await fetchJson('/api/zones/baserisks');
+    const values = Object.values(risks).map(v => parseFloat(v)).filter(v => !Number.isNaN(v));
+    const maxRisk = values.length ? Math.max(...values) : 0;
+    const scale = maxRisk > 0 && maxRisk < 40 ? (100 / maxRisk) : 1;
+
+    Object.keys(ZONE_META).forEach(name => {
+      if (risks[name] !== undefined) {
+        const raw = parseFloat(risks[name]);
+        ZONE_META[name].baseRisk = Number.isNaN(raw) ? 0 : Math.min(100, raw * scale);
+      }
+    });
+
+    Object.values(state.polygons).forEach(({ zone }) => {
+      if (ZONE_META[zone.name]) {
+        zone.baseRisk = ZONE_META[zone.name].baseRisk;
+      }
+    });
+
+    updateExtraMarkers();
+    refreshPolygonColors();
+    buildHeatmap();
+    refreshInsightUx();
+  } catch(e) { /* keep 0 fallback */ }
+}
+
+async function loadThresholds() {
+  try {
+    const t = await fetchJson('/api/thresholds');
+    const risk = t && t.risk ? t.risk : {};
+    const critical = parseFloat(risk.critical);
+    const degraded = parseFloat(risk.degraded);
+
+    state.thresholds = {
+      critical: Number.isNaN(critical) ? 70 : critical,
+      degraded: Number.isNaN(degraded) ? 40 : degraded,
+    };
+
+    updateExtraMarkers();
+    refreshPolygonColors();
+    if (state.selectedZone) renderZonePanel(state.selectedZone);
+    buildHeatmap();
+    refreshInsightUx();
+  } catch (e) { /* keep default thresholds */ }
+}
+
 // ================================================================
 // TICKER
 // ================================================================
@@ -790,20 +1350,30 @@ document.getElementById('perf-toggle').addEventListener('click', () => {
   document.getElementById('scan-line').style.display    = state.perfMode ? 'none' : '';
 });
 
+document.getElementById('focus-worst-btn').addEventListener('click', focusWorstZone);
+document.getElementById('reset-view-btn').addEventListener('click', resetGabesView);
+document.getElementById('toggle-heat-btn').addEventListener('click', toggleHeatmap);
+
 // ================================================================
 // BOOT
 // ================================================================
 refreshCore();
 refreshLive();
+loadRealZoneData();
 refreshPrediction();
 refreshAnomalies();
 refreshHistory();
+loadThresholds();
+loadBaseRisks();
+syncExtraZonesFromApi();
 
 setInterval(refreshCore,       10000);
 setInterval(refreshLive,       15000);
+setInterval(loadRealZoneData,  30000);
 setInterval(refreshPrediction, 60000);
 setInterval(refreshAnomalies,  60000);
 setInterval(refreshHistory,   300000);
+setInterval(syncExtraZonesFromApi, 300000);
 </script>
 </body>
 </html>

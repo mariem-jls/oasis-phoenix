@@ -3,7 +3,7 @@ import pandas as pd
 
 from config import ACTIVE_BASE_DIR, APP_ERRORS, ZONES, to_float, to_text
 from services.ai_engine import compute_toxicity, soil_stress_payload
-from services.data_loader import get_dataframe, get_latest_row
+from services.data_loader import get_dataframe, get_latest_row, compute_zone_base_risks
 from services.live_air import fetch_live_air_quality, get_live_snapshot_all_zones, find_zone
 
 zones_bp = Blueprint('zones', __name__)
@@ -89,7 +89,9 @@ def zones_ai():
             'cause_proba': ai.get('cause_proba', 0),
             'risk_score': ai.get('risk_score', 0),
             'risk_level': ai.get('risk_level', '🟢 SAINE'),
+            'current_ndvi': ai.get('current_ndvi', 0),
             'ndvi_predicted_30d': ai.get('ndvi_predicted_30d', 0),
+            'ndvi_trend': ai.get('ndvi_trend', 'stable'),
             'timestamp': live.get('timestamp', 'N/A'),
         })
     return jsonify(results)
@@ -177,3 +179,8 @@ def oasis_soil():
         'worst_stress_level': worst['stress_level'] if worst else 'N/A',
         'worst_stress_score': worst['stress_score'] if worst else 0,
     })
+
+@zones_bp.route('/api/zones/baserisks')
+def zone_base_risks():
+    frame = get_dataframe()
+    return jsonify(compute_zone_base_risks(frame))

@@ -29,10 +29,14 @@ def anomalies_live():
     zones = get_live_snapshot_all_zones().get('zones', [])
     anomalies = []
     for z in zones:
+        zone_name = z.get('zone', 'N/A')
+        zone_meta = find_zone(zone_name)
         ai = z.get('ai', {})
         if ai.get('is_anomaly', False):
             anomalies.append({
-                'zone': z.get('zone', 'N/A'),
+                'zone': zone_name,
+                'lat': zone_meta.get('lat') if zone_meta else None,
+                'lon': zone_meta.get('lon') if zone_meta else None,
                 'timestamp': z.get('timestamp', 'N/A'),
                 'so2_ug_m3': z.get('so2_ug_m3', 0.0),
                 'no2_ug_m3': z.get('no2_ug_m3', 0.0),
@@ -47,4 +51,11 @@ def anomalies_live():
 
 @live_bp.route('/api/thresholds')
 def thresholds():
-    return jsonify({'units': 'ug/m3', 'who': WHO_THRESHOLDS_UG_M3})
+    return jsonify({
+        'units': 'ug/m3',
+        'who': WHO_THRESHOLDS_UG_M3,
+        'risk': {
+            'critical': 70,
+            'degraded': 40,
+        },
+    })

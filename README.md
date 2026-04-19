@@ -21,13 +21,10 @@
 
 ## 👥 Équipe
 
-| Nom | Rôle |
-|---|---|
-| **Nibras Ounissi** | Backend · Module Culture Phoenix (recommandation agricole + crédits carbone) |
-| **Hana Fkiri** | IA · Modèle prédiction NDVI · Surveillance atmosphérique |
-| **Marie Jlassi** | Frontend · Dashboard surveillance · Carte interactive |
-| **Ferdaous Kachouri** | Backend · Module Réclamation · Clustering géo-temporel |
-
+ **Nibras Ounissi** 
+ **Hana Fkiri** 
+ **Marie Jlassi** 
+ **Ferdaous Kachouri**
 ---
 
 ## 📋 Description du projet
@@ -216,19 +213,6 @@ Générés sur Google Colab depuis le dataset FAO ECOCROP (1 694 espèces, data 
 | NASA POWER | Radiation + NDVI proxy | Non |
 | Carbonmark | Prix crédits carbone live | Oui |
 | Gemini 2.0 Flash | Enrichissement + réclamations | Oui |
-
----
-
-## 📊 Endpoints API Culture
-
-```
-GET  /culture/recommend?lat=33.88&lon=10.09&superficie=2.5
-POST /culture/recommend   (body JSON multi-parcelles)
-GET  /culture/carbon/price
-GET  /culture/carbon/rates
-GET  /culture/carbon/calculate?scientname=ACACIA+TORTILIS&superficie=2.5
-GET  /health
-```
 
 ---
 

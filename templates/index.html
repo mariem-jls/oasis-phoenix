@@ -1,0 +1,480 @@
+<!DOCTYPE html>
+<html lang="fr">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Oasis Phoenix — AI Healing Gabès</title>
+<link href="https://fonts.googleapis.com/css2?family=Share+Tech+Mono&family=Exo+2:wght@300;600;800&family=Cinzel:wght@400;700;900&display=swap" rel="stylesheet">
+<script src="https://cdnjs.cloudflare.com/ajax/libs/gsap/3.12.5/gsap.min.js"></script>
+<style>
+:root {
+  --green: #00ff88;
+  --yellow:#ffcc00;
+  --red:   #ff3355;
+  --blue:  #00cfff;
+  --gold:  #c9a84c;
+  --gold2: #ffcc44;
+  --bg:    #050d12;
+  --panel: #080f16;
+  --border:rgba(0,255,136,0.15);
+}
+*, *::before, *::after { margin:0; padding:0; box-sizing:border-box; }
+html { scroll-behavior: smooth; }
+
+body {
+  background: var(--bg);
+  color: #c8f0d8;
+  font-family: 'Exo 2', sans-serif;
+  min-height: 100vh;
+  overflow-x: hidden;
+  cursor: none;
+}
+
+/* ── CURSOR ── */
+#cur { position:fixed; width:6px; height:6px; background:var(--green); border-radius:50%; pointer-events:none; z-index:9999; transform:translate(-50%,-50%); mix-blend-mode:screen; }
+#cur-ring { position:fixed; width:26px; height:26px; border:1px solid rgba(0,255,136,0.35); border-radius:50%; pointer-events:none; z-index:9998; transform:translate(-50%,-50%); }
+
+/* ── SCAN LINE ── */
+#scan-line {
+  position:fixed; left:0; right:0; height:2px; top:0;
+  background:linear-gradient(90deg,transparent,rgba(0,255,136,0.4),transparent);
+  animation:scan 8s linear infinite; pointer-events:none; z-index:50;
+}
+@keyframes scan { 0%{top:0} 100%{top:100vh} }
+
+/* ── STARS ── */
+#stars { position:fixed; inset:0; z-index:0; pointer-events:none; overflow:hidden; }
+.star { position:absolute; background:#fff; border-radius:50%; animation:twinkle var(--d) var(--dl) infinite alternate; }
+@keyframes twinkle { from{opacity:var(--a1)} to{opacity:var(--a2)} }
+
+/* ── GRID ── */
+#grid {
+  position:fixed; inset:0; z-index:0; pointer-events:none;
+  background-image: linear-gradient(rgba(0,255,136,0.025) 1px,transparent 1px), linear-gradient(90deg,rgba(0,255,136,0.025) 1px,transparent 1px);
+  background-size: 60px 60px;
+  mask-image: radial-gradient(ellipse 80% 80% at 50% 50%, black 20%, transparent 80%);
+}
+
+/* ── HEADER ── */
+#header {
+  position: sticky; top:0; z-index:100;
+  display: flex; align-items:center; justify-content:space-between;
+  padding: 10px 28px;
+  background: rgba(5,13,18,0.97);
+  border-bottom: 1px solid var(--border);
+  backdrop-filter: blur(8px);
+}
+.logo-wrap { display:flex; align-items:center; gap:14px; text-decoration:none; }
+.logo-svg { width:38px; height:38px; }
+.logo-text { font-family:'Cinzel',serif; font-size:.9rem; font-weight:700; letter-spacing:.2em; color:var(--green); text-shadow:0 0 20px rgba(0,255,136,0.5); }
+.logo-sub-text { font-family:'Share Tech Mono',monospace; font-size:.5rem; letter-spacing:.3em; color:rgba(0,255,136,0.4); display:block; margin-top:2px; }
+
+.pulse-dot { width:8px; height:8px; border-radius:50%; background:var(--green); display:inline-block; margin-right:8px; animation:pulse 1.5s infinite; }
+@keyframes pulse { 0%,100%{box-shadow:0 0 0 0 rgba(0,255,136,0.7)} 50%{box-shadow:0 0 0 6px rgba(0,255,136,0)} }
+
+.nav-links { display:flex; gap:8px; }
+.nav-btn {
+  font-family:'Share Tech Mono',monospace; font-size:.62rem; letter-spacing:.15em;
+  padding:7px 16px; border-radius:999px; cursor:pointer; text-decoration:none;
+  border:1px solid var(--border); background:rgba(0,255,136,0.06); color:#d2ffe6;
+  transition:all .25s;
+}
+.nav-btn:hover { background:rgba(0,255,136,0.15); border-color:rgba(0,255,136,0.4); }
+
+/* ── HERO ── */
+#hero {
+  position: relative; z-index:10;
+  min-height: calc(100vh - 58px);
+  display: flex; flex-direction:column; align-items:center; justify-content:center;
+  text-align: center; padding: 60px 24px 40px;
+}
+
+#hero-phoenix {
+  width: min(280px, 60vw);
+  margin-bottom: 24px;
+  opacity: 0;
+  filter: drop-shadow(0 0 30px rgba(0,255,136,0.5)) drop-shadow(0 0 60px rgba(201,168,76,0.2));
+  animation: phoenix-float 3.5s ease-in-out infinite;
+}
+@keyframes phoenix-float { 0%,100%{transform:translateY(0)} 50%{transform:translateY(-12px)} }
+
+#hero-title {
+  font-family:'Cinzel',serif; font-weight:900;
+  font-size: clamp(2rem,7vw,5rem);
+  letter-spacing:.2em; line-height:1;
+  background: linear-gradient(135deg, var(--gold) 0%, var(--gold2) 40%, var(--green) 80%);
+  -webkit-background-clip:text; -webkit-text-fill-color:transparent; background-clip:text;
+  opacity:0; margin-bottom:10px;
+  filter: drop-shadow(0 0 30px rgba(0,255,136,0.3));
+}
+
+#hero-sub {
+  font-family:'Share Tech Mono',monospace; font-size:clamp(.7rem,1.8vw,.85rem);
+  letter-spacing:.35em; color:rgba(0,255,136,0.5); margin-bottom:8px; opacity:0;
+}
+
+#hero-desc {
+  font-size:clamp(.85rem,2vw,1rem); font-weight:300; font-style:italic;
+  color:rgba(200,240,210,0.6); max-width:560px; line-height:1.7; margin-bottom:40px; opacity:0;
+}
+
+/* ── MODULE CARDS ── */
+#modules {
+  display:grid; grid-template-columns:1fr 1fr;
+  gap:20px; max-width:900px; width:100%; opacity:0;
+}
+
+.module-card {
+  position: relative; overflow:hidden;
+  border: 1px solid var(--border);
+  background: rgba(8,15,22,0.92);
+  padding: 32px 28px 28px;
+  text-decoration: none; color: inherit;
+  transition: border-color .35s, transform .35s, box-shadow .35s;
+  clip-path: polygon(0 0, calc(100% - 20px) 0, 100% 20px, 100% 100%, 20px 100%, 0 calc(100% - 20px));
+}
+.module-card::before {
+  content:''; position:absolute; inset:0;
+  background:linear-gradient(135deg,rgba(0,255,136,0.04) 0%,transparent 60%);
+  pointer-events:none;
+}
+.module-card:hover {
+  border-color:rgba(0,255,136,0.45);
+  transform:translateY(-6px);
+  box-shadow:0 20px 50px rgba(0,0,0,0.5), 0 0 30px rgba(0,255,136,0.08);
+}
+
+.mc-tag {
+  font-family:'Share Tech Mono',monospace; font-size:.58rem; letter-spacing:.3em;
+  color:var(--green); margin-bottom:14px; display:flex; align-items:center; gap:8px;
+}
+.mc-tag::before { content:''; display:block; width:16px; height:1px; background:var(--green); }
+
+.mc-title {
+  font-family:'Cinzel',serif; font-size:1.25rem; font-weight:700;
+  color:#fff; margin-bottom:8px; letter-spacing:.05em;
+}
+
+.mc-desc { font-size:.82rem; color:rgba(200,240,210,0.55); line-height:1.65; margin-bottom:20px; font-weight:300; }
+
+.mc-features { display:flex; flex-direction:column; gap:6px; margin-bottom:22px; }
+.mc-feature {
+  font-family:'Share Tech Mono',monospace; font-size:.62rem; letter-spacing:.08em;
+  color:rgba(0,255,136,0.45); display:flex; align-items:center; gap:8px;
+}
+.mc-feature::before { content:'›'; color:var(--green); font-size:.85rem; }
+
+.mc-cta {
+  display:inline-flex; align-items:center; gap:8px;
+  font-family:'Share Tech Mono',monospace; font-size:.65rem; letter-spacing:.2em;
+  color:var(--green); padding:10px 20px;
+  border:1px solid rgba(0,255,136,0.25);
+  background:rgba(0,255,136,0.06);
+  transition:all .25s;
+  clip-path:polygon(6px 0%,100% 0%,calc(100% - 6px) 100%,0% 100%);
+}
+.mc-cta:hover { background:rgba(0,255,136,0.15); border-color:var(--green); color:#fff; }
+.mc-cta-arrow { transition:transform .25s; }
+.module-card:hover .mc-cta-arrow { transform:translateX(4px); }
+
+.mc-badge {
+  position:absolute; top:16px; right:20px;
+  font-family:'Share Tech Mono',monospace; font-size:.55rem; letter-spacing:.2em;
+  padding:4px 10px; border-radius:999px;
+}
+.badge-live { background:rgba(0,255,136,0.1); border:1px solid rgba(0,255,136,0.3); color:var(--green); }
+.badge-ai   { background:rgba(201,168,76,0.1); border:1px solid rgba(201,168,76,0.3); color:var(--gold2); }
+
+/* ── STATS ── */
+#stats {
+  position:relative; z-index:10;
+  display:flex; justify-content:center; flex-wrap:wrap;
+  gap:clamp(24px,5vw,70px);
+  padding:36px 28px;
+  border-top:1px solid var(--border);
+  border-bottom:1px solid var(--border);
+  background:rgba(5,13,18,0.8);
+  margin-top:60px;
+  overflow:hidden;
+}
+#stats::before {
+  content:''; position:absolute; inset:0;
+  background:linear-gradient(90deg,transparent,rgba(0,255,136,0.03) 50%,transparent);
+  animation:sweep 5s linear infinite;
+}
+@keyframes sweep { from{transform:translateX(-100%)} to{transform:translateX(100%)} }
+
+.stat { text-align:center; }
+.stat-val {
+  font-family:'Share Tech Mono',monospace;
+  font-size:clamp(1.6rem,4vw,2.5rem); color:var(--green);
+  text-shadow:0 0 20px rgba(0,255,136,0.35); display:block;
+}
+.stat-lbl {
+  font-size:.62rem; letter-spacing:.2em; color:rgba(0,255,136,0.4);
+  text-transform:uppercase; font-style:italic; margin-top:4px; display:block;
+}
+
+/* ── FOOTER ── */
+footer {
+  position:relative; z-index:10;
+  border-top:1px solid rgba(0,255,136,0.06);
+  padding:22px 28px;
+  display:flex; align-items:center; justify-content:space-between; flex-wrap:wrap; gap:12px;
+}
+.footer-logo { width:32px; opacity:.5; }
+.footer-links { display:flex; gap:20px; }
+.footer-links a { font-family:'Share Tech Mono',monospace; font-size:.58rem; letter-spacing:.18em; color:rgba(0,255,136,0.3); text-decoration:none; transition:color .3s; }
+.footer-links a:hover { color:var(--green); }
+.footer-copy { font-family:'Share Tech Mono',monospace; font-size:.55rem; letter-spacing:.12em; color:rgba(0,255,136,0.18); }
+
+@media(max-width:640px) {
+  #modules { grid-template-columns:1fr; }
+  .nav-links .nav-btn:nth-child(n+3) { display:none; }
+}
+</style>
+</head>
+<body>
+
+<div id="cur"></div>
+<div id="cur-ring"></div>
+<div id="scan-line"></div>
+<div id="stars"></div>
+<div id="grid"></div>
+
+<!-- ═══ HEADER ═══ -->
+<header id="header">
+  <a href="/" class="logo-wrap">
+    <svg class="logo-svg" viewBox="0 0 300 280" xmlns="http://www.w3.org/2000/svg">
+      <defs>
+        <linearGradient id="lg1" x1="0%" y1="0%" x2="100%" y2="100%">
+          <stop offset="0%" stop-color="#ccff44"/><stop offset="100%" stop-color="#006622"/>
+        </linearGradient>
+      </defs>
+      <path d="M150,155 Q100,120 30,90 Q70,125 115,148 Z"  fill="url(#lg1)" opacity=".95"/>
+      <path d="M150,155 Q200,120 270,90 Q230,125 185,148 Z" fill="url(#lg1)" opacity=".95"/>
+      <path d="M150,155 Q95,135 25,128 Q68,155 118,158 Z"  fill="#44cc22" opacity=".85"/>
+      <path d="M150,155 Q205,135 275,128 Q232,155 182,158 Z" fill="#44cc22" opacity=".85"/>
+      <path d="M148,195 Q138,235 125,272 Q142,248 152,205 Z" fill="#33aa11"/>
+      <path d="M152,195 Q162,235 175,272 Q158,248 148,205 Z" fill="#33aa11"/>
+      <ellipse cx="150" cy="148" rx="18" ry="30" fill="#66dd22"/>
+      <ellipse cx="150" cy="82"  rx="16" ry="16" fill="#77ee33"/>
+      <path d="M150,66 Q147,50 150,38 Q153,50 150,66Z" fill="#ffcc44"/>
+      <path d="M143,68 Q137,53 139,41 Q144,56 145,69Z" fill="#ffcc44" opacity=".75"/>
+      <path d="M157,68 Q163,53 161,41 Q156,56 155,69Z" fill="#ffcc44" opacity=".75"/>
+    </svg>
+    <div>
+      <span class="logo-text">OASIS PHOENIX</span>
+      <span class="logo-sub-text">AI HEALING GABÈS</span>
+    </div>
+  </a>
+
+  <nav class="nav-links">
+    <a href="/" class="nav-btn"><span class="pulse-dot" style="width:5px;height:5px;margin-right:5px"></span>Accueil</a>
+    <a href="/dashboard" class="nav-btn">Surveillance</a>
+    <a href="/culture" class="nav-btn">Culture</a>
+    <a href="/culture/carbone" class="nav-btn">Carbone</a>
+  </nav>
+</header>
+
+<!-- ═══ HERO ═══ -->
+<section id="hero">
+
+  <!-- Phoenix SVG logo -->
+  <svg id="hero-phoenix" viewBox="0 0 300 280" xmlns="http://www.w3.org/2000/svg">
+    <defs>
+      <linearGradient id="hg1" x1="0%" y1="0%" x2="100%" y2="100%">
+        <stop offset="0%" stop-color="#ccff44"/><stop offset="40%" stop-color="#44cc22"/><stop offset="100%" stop-color="#006622"/>
+      </linearGradient>
+      <linearGradient id="hg2" x1="100%" y1="0%" x2="0%" y2="100%">
+        <stop offset="0%" stop-color="#ccff44"/><stop offset="40%" stop-color="#44cc22"/><stop offset="100%" stop-color="#006622"/>
+      </linearGradient>
+      <linearGradient id="hbg" x1="50%" y1="0%" x2="50%" y2="100%">
+        <stop offset="0%" stop-color="#88ff44"/><stop offset="100%" stop-color="#006622"/>
+      </linearGradient>
+      <linearGradient id="htg" x1="50%" y1="0%" x2="50%" y2="100%">
+        <stop offset="0%" stop-color="#ffee44"/><stop offset="100%" stop-color="#cc8800"/>
+      </linearGradient>
+      <filter id="hglow">
+        <feGaussianBlur stdDeviation="4" result="b"/>
+        <feMerge><feMergeNode in="b"/><feMergeNode in="SourceGraphic"/></feMerge>
+      </filter>
+    </defs>
+    <g filter="url(#hglow)">
+      <path d="M150,155 Q100,120 30,90 Q70,125 115,148 Z"   fill="url(#hg1)" opacity=".95"/>
+      <path d="M150,155 Q95,135 25,128 Q68,155 118,158 Z"   fill="url(#hg1)" opacity=".88"/>
+      <path d="M150,155 Q90,155 22,165 Q68,175 120,168 Z"   fill="#33aa11"   opacity=".8"/>
+      <path d="M150,155 Q95,170 35,195 Q78,190 125,175 Z"   fill="#228800"   opacity=".72"/>
+      <path d="M30,90  Q35,95 38,105 Z"  fill="#ccff44" opacity=".6"/>
+      <path d="M25,128 Q30,136 33,148 Z" fill="#ccff44" opacity=".5"/>
+    </g>
+    <g filter="url(#hglow)">
+      <path d="M150,155 Q200,120 270,90  Q230,125 185,148 Z" fill="url(#hg2)" opacity=".95"/>
+      <path d="M150,155 Q205,135 275,128 Q232,155 182,158 Z" fill="url(#hg2)" opacity=".88"/>
+      <path d="M150,155 Q210,155 278,165 Q232,175 180,168 Z" fill="#33aa11"   opacity=".8"/>
+      <path d="M150,155 Q205,170 265,195 Q222,190 175,175 Z" fill="#228800"   opacity=".72"/>
+      <path d="M270,90  Q265,95 262,105 Z" fill="#ccff44" opacity=".6"/>
+      <path d="M275,128 Q270,136 267,148 Z" fill="#ccff44" opacity=".5"/>
+    </g>
+    <g filter="url(#hglow)">
+      <path d="M145,195 Q130,230 118,270 Q135,245 148,205 Z" fill="#33aa11" opacity=".85"/>
+      <path d="M150,198 Q148,240 145,280 Q153,252 154,210 Z" fill="#44cc11" opacity=".9"/>
+      <path d="M155,195 Q170,230 182,270 Q165,245 152,205 Z" fill="#33aa11" opacity=".85"/>
+      <path d="M145,280 Q143,292 148,298 Z" fill="url(#htg)" opacity=".8"/>
+      <path d="M182,270 Q185,282 180,290 Z" fill="url(#htg)" opacity=".7"/>
+    </g>
+    <ellipse cx="150" cy="148" rx="18" ry="30" fill="url(#hbg)" filter="url(#hglow)"/>
+    <path d="M142,120 Q138,100 142,88 Q150,95 158,88 Q162,100 158,120 Z" fill="#55dd22" filter="url(#hglow)"/>
+    <ellipse cx="150" cy="82" rx="16" ry="16" fill="#77ee33" filter="url(#hglow)"/>
+    <path d="M150,66 Q147,50 150,38 Q153,50 150,66Z" fill="url(#htg)" opacity=".95"/>
+    <path d="M143,68 Q137,53 139,41 Q144,56 145,69Z" fill="#ffcc44" opacity=".75"/>
+    <path d="M157,68 Q163,53 161,41 Q156,56 155,69Z" fill="#ffcc44" opacity=".75"/>
+    <circle cx="156" cy="79" r="4" fill="#ccff44"/>
+    <circle cx="157" cy="79" r="2" fill="#001a00"/>
+    <path d="M150,92 Q143,100 145,106 Q150,100 155,106 Q157,100 150,92Z" fill="url(#htg)"/>
+  </svg>
+
+  <h1 id="hero-title">OASIS PHOENIX</h1>
+  <p id="hero-sub">INTELLIGENCE ARTIFICIELLE · GABÈS · TUNISIE</p>
+  <p id="hero-desc">
+    Plateforme intégrée de surveillance environnementale et de recommandation agricole pour le gouvernorat de Gabès — combinant détection d'anomalies atmosphériques et optimisation des cultures par IA.
+  </p>
+
+  <!-- Module Cards -->
+  <div id="modules">
+
+    <!-- MODULE 1 : Surveillance collègues -->
+    <a href="/dashboard" class="module-card">
+      <span class="mc-badge badge-live"><span class="pulse-dot" style="width:5px;height:5px;margin-right:4px"></span>LIVE</span>
+      <div class="mc-tag">Surveillance Environnementale</div>
+      <div class="mc-title">AI Healing Gabès</div>
+      <p class="mc-desc">Monitoring temps réel des polluants atmosphériques, détection d'anomalies IA, et analyse des 13 délégations du gouvernorat de Gabès.</p>
+      <div class="mc-features">
+        <div class="mc-feature">Données Sentinel-5P + ERA5 + MODIS — 6 ans</div>
+        <div class="mc-feature">Isolation Forest + Gradient Boosting</div>
+        <div class="mc-feature">SO₂, NO₂, CO, O₃ · Heatmap live</div>
+        <div class="mc-feature">Prédiction NDVI 30 jours</div>
+      </div>
+      <span class="mc-cta">ACCÉDER AU DASHBOARD <span class="mc-cta-arrow">→</span></span>
+    </a>
+
+    <!-- MODULE 2 : Culture (toi) -->
+    <a href="/culture" class="module-card">
+      <span class="mc-badge badge-ai">IA · RF</span>
+      <div class="mc-tag">Recommandation Agricole</div>
+      <div class="mc-title">Culture Phoenix</div>
+      <p class="mc-desc">Recommandation de cultures adaptées basée sur le sol, le climat et la végétation de chaque parcelle — avec calcul des revenus en crédits carbone.</p>
+      <div class="mc-features">
+        <div class="mc-feature">Random Forest · 1 694 espèces FAO ECOCROP</div>
+        <div class="mc-feature">SoilGrids + Open-Meteo + NASA POWER</div>
+        <div class="mc-feature">91.5% précision · Top 5 recommandations</div>
+        <div class="mc-feature">Crédits carbone Carbonmark · Gold Standard</div>
+      </div>
+      <span class="mc-cta">ANALYSER MA PARCELLE <span class="mc-cta-arrow">→</span></span>
+    </a>
+
+  </div>
+</section>
+
+<!-- ═══ STATS ═══ -->
+<div id="stats">
+  <div class="stat">
+    <span class="stat-val" id="sv1">0</span>
+    <span class="stat-lbl">Jours analysés</span>
+  </div>
+  <div class="stat">
+    <span class="stat-val" id="sv2">1 694</span>
+    <span class="stat-lbl">Espèces FAO</span>
+  </div>
+  <div class="stat">
+    <span class="stat-val" id="sv3">91.5%</span>
+    <span class="stat-lbl">Précision IA</span>
+  </div>
+  <div class="stat">
+    <span class="stat-val" id="sv4">13</span>
+    <span class="stat-lbl">Délégations suivies</span>
+  </div>
+  <div class="stat">
+    <span class="stat-val" id="sv5">12t</span>
+    <span class="stat-lbl">CO₂/ha/an max</span>
+  </div>
+</div>
+
+<!-- ═══ FOOTER ═══ -->
+<footer>
+  <svg class="footer-logo" viewBox="0 0 300 280" xmlns="http://www.w3.org/2000/svg">
+    <path d="M150,155 Q100,120 30,90 Q70,125 115,148 Z"  fill="#44cc22" opacity=".8"/>
+    <path d="M150,155 Q200,120 270,90 Q230,125 185,148 Z" fill="#44cc22" opacity=".8"/>
+    <ellipse cx="150" cy="148" rx="16" ry="28" fill="#66dd22"/>
+    <ellipse cx="150" cy="82"  rx="14" ry="14" fill="#77ee33"/>
+  </svg>
+  <div class="footer-links">
+    <a href="/">Accueil</a>
+    <a href="/dashboard">Surveillance</a>
+    <a href="/culture">Culture</a>
+    <a href="/culture/carbone">Carbone</a>
+    <a href="/culture/intro">Intro</a>
+  </div>
+  <span class="footer-copy">© 2026 OASIS PHOENIX · GABÈS · TUNISIE</span>
+</footer>
+
+<script>
+// ── Cursor ──
+const cur=document.getElementById('cur'), ring=document.getElementById('cur-ring');
+let mx=0,my=0,rx=0,ry=0;
+document.addEventListener('mousemove',e=>{mx=e.clientX;my=e.clientY;cur.style.left=mx+'px';cur.style.top=my+'px';});
+(function loop(){rx+=(mx-rx)*.1;ry+=(my-ry)*.1;ring.style.left=rx+'px';ring.style.top=ry+'px';requestAnimationFrame(loop);})();
+
+// ── Stars ──
+const sc=document.getElementById('stars');
+for(let i=0;i<180;i++){
+  const s=document.createElement('div');
+  const sz=Math.random()*2+.4;
+  s.className='star';
+  s.style.cssText=`left:${Math.random()*100}%;top:${Math.random()*80}%;width:${sz}px;height:${sz}px;--d:${2+Math.random()*4}s;--dl:${Math.random()*5}s;--a1:${.05+Math.random()*.3};--a2:${.4+Math.random()*.5}`;
+  sc.appendChild(s);
+}
+
+// ── GSAP hero entrance ──
+gsap.to('#hero-phoenix', { opacity:1, y:0, duration:1.4, ease:'power3.out', delay:.2 });
+gsap.set('#hero-title',  { clipPath:'inset(0 100% 0 0)' });
+gsap.to('#hero-title',   { opacity:1, clipPath:'inset(0 0% 0 0)', duration:1.1, ease:'power2.out', delay:.8 });
+gsap.to('#hero-sub',     { opacity:1, y:0, duration:.8, ease:'power2.out', delay:1.2 });
+gsap.to('#hero-desc',    { opacity:1, y:0, duration:.8, ease:'power2.out', delay:1.5 });
+gsap.to('#modules',      { opacity:1, y:0, duration:.9, ease:'power2.out', delay:1.8 });
+gsap.set(['#hero-sub','#hero-desc'], { y:16 });
+gsap.set('#modules', { y:24 });
+
+// ── Stats counter from API ──
+async function loadStats() {
+  try {
+    const r = await fetch('/api/stats');
+    if (!r.ok) return;
+    const d = await r.json();
+    const el = document.getElementById('sv1');
+    const target = parseInt(d.total_days || 0);
+    let val = 0;
+    const step = Math.ceil(target / 60);
+    const t = setInterval(() => {
+      val = Math.min(val + step, target);
+      el.textContent = val.toLocaleString();
+      if (val >= target) clearInterval(t);
+    }, 30);
+  } catch(e) {
+    document.getElementById('sv1').textContent = '2 190+';
+  }
+}
+loadStats();
+
+// ── Hover glow on cards ──
+document.querySelectorAll('.module-card').forEach(card => {
+  card.addEventListener('mouseenter', () => {
+    card.style.filter = 'drop-shadow(0 0 20px rgba(0,255,136,0.15))';
+  });
+  card.addEventListener('mouseleave', () => {
+    card.style.filter = 'none';
+  });
+});
+</script>
+</body>
+</html>

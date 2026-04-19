@@ -18,10 +18,10 @@ def _load():
     global _rf, _scaler, _le, _features, _mapping
     if _rf is None:
         print("[Predictor] Chargement modèles...")
-        _rf       = joblib.load(MODELS_DIR / "model_rf.pkl")
-        _scaler   = joblib.load(MODELS_DIR / "scaler.pkl")
-        _le       = joblib.load(MODELS_DIR / "label_encoder.pkl")
-        _features = joblib.load(MODELS_DIR / "features_list.pkl")
+        _rf       = joblib.load(MODELS_DIR / "culture_model_rf.pkl")
+        _scaler   = joblib.load(MODELS_DIR / "culture_scaler.pkl")
+        _le       = joblib.load(MODELS_DIR / "culture_label_encoder.pkl")
+        _features = joblib.load(MODELS_DIR / "culture_features_list.pkl")
         _mapping  = pd.read_csv(MODELS_DIR / "scientname_to_name.csv")
         print(f"[Predictor] ✓ {len(_le.classes_)} plantes chargées")
 

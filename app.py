@@ -2,9 +2,12 @@ from flask import Flask, render_template
 
 from routes import register_blueprints
 from services.data_loader import get_dataframe
+from culture import register_culture_blueprints
+
 
 
 app = Flask(__name__)
+register_culture_blueprints(app)
 
 
 @app.route('/')

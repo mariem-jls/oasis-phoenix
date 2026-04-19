@@ -1,0 +1,337 @@
+<!DOCTYPE html>
+<html lang="fr">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Culture Phoenix — Résultats</title>
+  <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+  <link href="https://fonts.googleapis.com/css2?family=Share+Tech+Mono&family=Exo+2:wght@300;600;800&display=swap" rel="stylesheet">
+  <style>
+    :root {
+      --green:#00ff88; --yellow:#ffcc00; --red:#ff3355;
+      --blue:#00cfff;  --bg:#050d12;    --panel:#080f16;
+      --border:rgba(0,255,136,0.15);
+    }
+    * { margin:0; padding:0; box-sizing:border-box; }
+    body {
+      background:var(--bg); color:#c8f0d8;
+      font-family:'Exo 2',sans-serif;
+      min-height:100vh; display:flex; flex-direction:column;
+    }
+
+    #header {
+      display:flex; align-items:center; justify-content:space-between;
+      padding:10px 24px;
+      background:rgba(5,13,18,0.97);
+      border-bottom:1px solid var(--border); z-index:100;
+      position:sticky; top:0;
+    }
+    #header h1 {
+      font-size:1rem; font-weight:800; letter-spacing:3px;
+      text-transform:uppercase; color:var(--green);
+      text-shadow:0 0 20px rgba(0,255,136,0.5);
+    }
+    .pulse-dot {
+      width:8px; height:8px; border-radius:50%;
+      background:var(--green); display:inline-block;
+      margin-right:8px; animation:pulse 1.5s infinite;
+    }
+    @keyframes pulse {
+      0%,100%{box-shadow:0 0 0 0 rgba(0,255,136,0.7)}
+      50%{box-shadow:0 0 0 6px rgba(0,255,136,0)}
+    }
+    .nav-links { display:flex; gap:10px; }
+    .nav-btn {
+      background:rgba(0,255,136,0.08); color:#d2ffe6;
+      border:1px solid var(--border); font-size:0.68rem;
+      padding:6px 14px; border-radius:999px; cursor:pointer;
+      font-family:'Share Tech Mono',monospace; letter-spacing:1px;
+      text-decoration:none; transition:background 0.2s;
+    }
+    .nav-btn:hover  { background:rgba(0,255,136,0.18); }
+    .nav-btn.active { background:rgba(0,255,136,0.22); border-color:var(--green); color:var(--green); }
+
+    #content { padding:24px; max-width:1200px; margin:0 auto; width:100%; }
+
+    /* BANNER */
+    .result-banner {
+      border:1px solid rgba(0,255,136,0.3);
+      background:rgba(0,255,136,0.05);
+      border-radius:8px; padding:16px 20px;
+      margin-bottom:20px;
+      display:flex; justify-content:space-between; align-items:center;
+      flex-wrap:wrap; gap:12px;
+    }
+    .banner-coord {
+      font-family:'Share Tech Mono',monospace; font-size:0.9rem;
+      color:var(--green);
+    }
+    .banner-sub { font-size:0.7rem; color:#4a8a6a; margin-top:4px; }
+    .banner-stats { display:flex; gap:24px; }
+    .bstat-val { font-family:'Share Tech Mono',monospace; font-size:1.4rem; color:var(--green); }
+    .bstat-lbl { font-size:0.6rem; letter-spacing:2px; color:#3a6a4a; text-transform:uppercase; }
+
+    /* GRID */
+    .results-grid {
+      display:grid; grid-template-columns:1fr 1fr;
+      gap:16px; margin-bottom:20px;
+    }
+    @media(max-width:768px) { .results-grid { grid-template-columns:1fr; } }
+
+    /* CARDS */
+    .card {
+      background:var(--panel); border:1px solid var(--border);
+      border-radius:8px; padding:16px;
+    }
+    .card-title {
+      font-size:0.6rem; letter-spacing:3px; text-transform:uppercase;
+      color:#2a5a3a; margin-bottom:12px;
+      display:flex; align-items:center; gap:6px;
+    }
+    .card-title::before { content:''; display:block; width:20px; height:1px; background:var(--green); }
+
+    /* PLANTE PRINCIPALE */
+    .main-plant {
+      border:1px solid rgba(0,255,136,0.4);
+      background:rgba(0,255,136,0.06);
+      border-radius:8px; padding:20px;
+      margin-bottom:16px;
+    }
+    .mp-rank  { font-size:0.6rem; color:var(--green); letter-spacing:3px; margin-bottom:6px; }
+    .mp-name  { font-size:1.3rem; font-weight:800; color:#fff; margin-bottom:4px; }
+    .mp-sci   { font-size:0.8rem; color:#4a8a6a; font-style:italic; margin-bottom:14px; }
+    .mp-stats { display:grid; grid-template-columns:1fr 1fr 1fr; gap:10px; }
+    .mp-stat  { text-align:center; }
+    .mp-stat-val { font-family:'Share Tech Mono',monospace; font-size:1.1rem; color:var(--green); }
+    .mp-stat-lbl { font-size:0.6rem; color:#3a6a4a; text-transform:uppercase; letter-spacing:1px; margin-top:3px; }
+
+    /* AUTRES PLANTES */
+    .alt-plant {
+      display:flex; justify-content:space-between; align-items:center;
+      padding:10px 12px; margin-bottom:6px;
+      border:1px solid var(--border); border-radius:6px;
+      background:rgba(0,255,136,0.02);
+    }
+    .ap-left .ap-name { font-size:0.82rem; color:#c8f0d8; font-weight:600; }
+    .ap-left .ap-sci  { font-size:0.66rem; color:#3a6a4a; font-style:italic; }
+    .ap-right { text-align:right; }
+    .ap-conf  { font-family:'Share Tech Mono',monospace; font-size:0.9rem; color:var(--green); }
+    .ap-rev   { font-size:0.66rem; color:#3a6a4a; margin-top:2px; }
+    .conf-bar { height:2px; background:rgba(255,255,255,0.05); border-radius:1px; margin-top:6px; }
+    .conf-fill{ height:100%; border-radius:1px; background:var(--green); transition:width 0.8s; }
+
+    /* TERRAIN */
+    .terrain-grid {
+      display:grid; grid-template-columns:1fr 1fr; gap:8px;
+    }
+    .t-item { padding:8px 10px; background:rgba(0,255,136,0.03); border-radius:4px; border:1px solid var(--border); }
+    .t-lbl  { font-size:0.6rem; color:#3a6a4a; letter-spacing:1px; text-transform:uppercase; }
+    .t-val  { font-family:'Share Tech Mono',monospace; font-size:0.9rem; color:var(--green); margin-top:3px; }
+
+    /* CHART */
+    .chart-wrap { height:200px; position:relative; }
+
+    .hint-msg {
+      text-align:center; padding:40px 10px;
+      font-size:0.8rem; color:#3a6a4a;
+      font-family:'Share Tech Mono',monospace; line-height:2;
+    }
+  </style>
+</head>
+<body>
+
+<div id="header">
+  <h1><span class="pulse-dot"></span>Culture Phoenix — Résultats d'analyse</h1>
+  <nav class="nav-links">
+    <a href="/static/culture/carte_culture.html"    class="nav-btn">Carte</a>
+    <a href="/static/culture/resultats_culture.html" class="nav-btn active">Résultats</a>
+    <a href="/static/culture/dashboard_carbone.html" class="nav-btn">Carbone</a>
+  </nav>
+</div>
+
+<div id="content">
+  <div id="main-content">
+    <div class="hint-msg">
+      Aucun résultat disponible<br>
+      Retournez sur la carte et cliquez sur une parcelle
+    </div>
+  </div>
+</div>
+
+<script>
+const raw = localStorage.getItem('culture_last');
+
+if (!raw) {
+  document.getElementById('main-content').innerHTML = `
+    <div class="hint-msg">
+      Aucun résultat disponible<br>
+      <a href="/static/culture/carte_culture.html"
+         style="color:var(--green);font-family:'Share Tech Mono',monospace">
+        → Retour carte
+      </a>
+    </div>`;
+} else {
+  const data = JSON.parse(raw);
+  const t    = data.conditions_terrain;
+  const recs = data.recommandations;
+  const top  = recs[0];
+  const coord = data.coordonnees;
+
+  document.getElementById('main-content').innerHTML = `
+
+    <!-- BANNER -->
+    <div class="result-banner">
+      <div>
+        <div class="banner-coord">
+          ${coord.lat}°N  ${coord.lon}°E
+        </div>
+        <div class="banner-sub">
+          Superficie: ${data.superficie_ha} ha &nbsp;|&nbsp;
+          Analyses: SoilGrids · Open-Meteo · NASA POWER · FAO ECOCROP
+        </div>
+      </div>
+      <div class="banner-stats">
+        <div>
+          <div class="bstat-val">${recs.length}</div>
+          <div class="bstat-lbl">Plantes</div>
+        </div>
+        <div>
+          <div class="bstat-val">${top.carbon.tCO2_ha_an}t</div>
+          <div class="bstat-lbl">CO₂/ha/an</div>
+        </div>
+        <div>
+          <div class="bstat-val">${top.carbon.revenu_tnd_an}</div>
+          <div class="bstat-lbl">TND/an</div>
+        </div>
+      </div>
+    </div>
+
+    <div class="results-grid">
+
+      <!-- COL 1 : Recommandations -->
+      <div>
+        <div class="card">
+          <div class="card-title">Recommandation principale</div>
+          <div class="main-plant">
+            <div class="mp-rank">★ MEILLEURE CORRESPONDANCE FAO</div>
+            ${top.image_url ? `<img src="${top.image_url}" alt="${top.nom_commun_fr}"
+              style="width:100%;height:140px;object-fit:cover;border-radius:6px;
+                     margin-bottom:10px;opacity:0.85;">` : ''}
+            <div class="mp-name">${top.nom_commun_fr || top.name}</div>
+            ${top.nom_commun_ar ? `<div style="font-size:1rem;color:#4a8a6a;
+              direction:rtl;margin-bottom:2px">${top.nom_commun_ar}</div>` : ''}
+            ${top.nom_tunisie ? `<div style="font-size:0.72rem;color:#3a6a4a;
+              margin-bottom:4px">Tunisie : ${top.nom_tunisie}</div>` : ''}
+            <div class="mp-sci">${top.scientname}</div>
+            ${top.description_fr ? `<div style="font-size:0.72rem;color:#7ab89a;
+              line-height:1.5;margin-bottom:10px">${top.description_fr}</div>` : ''}
+            ${top.pourquoi_ici ? `
+              <div style="background:rgba(0,255,136,0.05);border-left:2px solid var(--green);
+                padding:8px 10px;border-radius:0 4px 4px 0;margin-bottom:10px">
+                <div style="font-size:0.58rem;color:#2a5a3a;letter-spacing:2px;
+                  text-transform:uppercase;margin-bottom:3px">Pourquoi ici</div>
+                <div style="font-size:0.72rem;color:#7ab89a;line-height:1.5">
+                  ${top.pourquoi_ici}</div>
+              </div>` : ''}
+            ${top.conseils_plantation ? `
+              <div style="font-size:0.68rem;color:#4a7a5a;margin-bottom:10px">
+                <span style="color:#2a5a3a">Conseil : </span>${top.conseils_plantation}
+                ${top.saison_plantation ? ` — <span style="color:var(--yellow)">
+                  ${top.saison_plantation}</span>` : ''}
+              </div>` : ''}
+            <div class="mp-stats">
+              <div class="mp-stat">
+                <div class="mp-stat-val">${top.confiance_pct}%</div>
+                <div class="mp-stat-lbl">Confiance</div>
+              </div>
+              <div class="mp-stat">
+                <div class="mp-stat-val">${top.carbon.tCO2_ha_an}t</div>
+                <div class="mp-stat-lbl">CO₂/ha/an</div>
+              </div>
+              <div class="mp-stat">
+                <div class="mp-stat-val">${top.carbon.revenu_tnd_5ans}</div>
+                <div class="mp-stat-lbl">TND/5 ans</div>
+              </div>
+            </div>
+          </div>
+
+          <div class="card-title" style="margin-top:14px">Alternatives</div>
+          ${recs.slice(1).map((r,i) => `
+            <div class="alt-plant">
+              <div class="ap-left" style="display:flex;gap:10px;align-items:center">
+                ${r.image_url ? `<img src="${r.image_url}" alt=""
+                  style="width:44px;height:44px;border-radius:4px;
+                  object-fit:cover;opacity:0.75;flex-shrink:0">` : ''}
+                <div>
+                  <div class="ap-name">${r.nom_commun_fr || r.name}</div>
+                  ${r.nom_commun_ar ? `<div style="font-size:0.65rem;
+                    color:#3a6a4a;direction:rtl">${r.nom_commun_ar}</div>` : ''}
+                  <div class="ap-sci">${r.scientname}</div>
+                  <div class="conf-bar">
+                    <div class="conf-fill" style="width:${r.confiance_pct*3}%"></div>
+                  </div>
+                </div>
+              </div>
+              <div class="ap-right">
+                <div class="ap-conf">${r.confiance_pct}%</div>
+                <div class="ap-rev">${r.carbon.revenu_tnd_an} TND/an</div>
+              </div>
+            </div>`).join('')}
+        </div>
+      </div>
+
+      <!-- COL 2 : Terrain + Chart -->
+      <div style="display:flex;flex-direction:column;gap:16px">
+
+        <div class="card">
+          <div class="card-title">Conditions terrain</div>
+          <div class="terrain-grid">
+            <div class="t-item"><div class="t-lbl">pH sol</div><div class="t-val">${t.pH}</div></div>
+            <div class="t-item"><div class="t-lbl">Salinité</div><div class="t-val">${t.salinite} dS/m</div></div>
+            <div class="t-item"><div class="t-lbl">T max</div><div class="t-val">${t.T_max}°C</div></div>
+            <div class="t-item"><div class="t-lbl">T min</div><div class="t-val">${t.T_min}°C</div></div>
+            <div class="t-item"><div class="t-lbl">Précip.</div><div class="t-val">${t.precip_mm} mm</div></div>
+            <div class="t-item"><div class="t-lbl">NDVI</div><div class="t-val">${t.ndvi}</div></div>
+            <div class="t-item"><div class="t-lbl">Radiation</div><div class="t-val">${t.radiation} kWh</div></div>
+            <div class="t-item"><div class="t-lbl">Humidité sol</div><div class="t-val">${(t.moisture*100).toFixed(1)}%</div></div>
+          </div>
+        </div>
+
+        <div class="card">
+          <div class="card-title">Confiance par plante</div>
+          <div class="chart-wrap">
+            <canvas id="conf-chart"></canvas>
+          </div>
+        </div>
+
+      </div>
+    </div>`;
+
+  // Chart confiance
+  const ctx = document.getElementById('conf-chart').getContext('2d');
+  new Chart(ctx, {
+    type: 'bar',
+    data: {
+      labels: recs.map(r => r.name.split(' ').slice(0,2).join(' ')),
+      datasets:[{
+        data:            recs.map(r => r.confiance_pct),
+        backgroundColor: recs.map((_,i) => i===0 ? 'rgba(0,255,136,0.6)' : 'rgba(0,255,136,0.15)'),
+        borderColor:     recs.map((_,i) => i===0 ? '#00ff88' : 'rgba(0,255,136,0.3)'),
+        borderWidth: 1,
+        borderRadius: 4,
+      }]
+    },
+    options: {
+      responsive:true, maintainAspectRatio:false,
+      plugins:{ legend:{ display:false } },
+      scales:{
+        x:{ ticks:{ color:'#4a8a6a', font:{size:9} }, grid:{ color:'rgba(0,255,136,0.05)' } },
+        y:{ ticks:{ color:'#4a8a6a' }, grid:{ color:'rgba(0,255,136,0.05)' },
+            min:0, max:100 }
+      }
+    }
+  });
+}
+</script>
+</body>
+</html>

@@ -1,0 +1,307 @@
+<!DOCTYPE html>
+<html lang="fr">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Culture Phoenix — Dashboard Carbone</title>
+  <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+  <link href="https://fonts.googleapis.com/css2?family=Share+Tech+Mono&family=Exo+2:wght@300;600;800&display=swap" rel="stylesheet">
+  <style>
+    :root {
+      --green:#00ff88; --yellow:#ffcc00; --red:#ff3355;
+      --blue:#00cfff;  --bg:#050d12;    --panel:#080f16;
+      --border:rgba(0,255,136,0.15);
+    }
+    * { margin:0; padding:0; box-sizing:border-box; }
+    body {
+      background:var(--bg); color:#c8f0d8;
+      font-family:'Exo 2',sans-serif; min-height:100vh;
+    }
+
+    #header {
+      display:flex; align-items:center; justify-content:space-between;
+      padding:10px 24px;
+      background:rgba(5,13,18,0.97);
+      border-bottom:1px solid var(--border);
+      position:sticky; top:0; z-index:100;
+    }
+    #header h1 {
+      font-size:1rem; font-weight:800; letter-spacing:3px;
+      text-transform:uppercase; color:var(--green);
+      text-shadow:0 0 20px rgba(0,255,136,0.5);
+    }
+    .pulse-dot {
+      width:8px; height:8px; border-radius:50%;
+      background:var(--green); display:inline-block;
+      margin-right:8px; animation:pulse 1.5s infinite;
+    }
+    @keyframes pulse {
+      0%,100%{box-shadow:0 0 0 0 rgba(0,255,136,0.7)}
+      50%{box-shadow:0 0 0 6px rgba(0,255,136,0)}
+    }
+    .nav-links { display:flex; gap:10px; }
+    .nav-btn {
+      background:rgba(0,255,136,0.08); color:#d2ffe6;
+      border:1px solid var(--border); font-size:0.68rem;
+      padding:6px 14px; border-radius:999px; cursor:pointer;
+      font-family:'Share Tech Mono',monospace; letter-spacing:1px;
+      text-decoration:none; transition:background 0.2s;
+    }
+    .nav-btn:hover  { background:rgba(0,255,136,0.18); }
+    .nav-btn.active { background:rgba(0,255,136,0.22); border-color:var(--green); color:var(--green); }
+
+    #content { padding:24px; max-width:1200px; margin:0 auto; }
+
+    /* PRICE BANNER */
+    .price-banner {
+      display:flex; align-items:center; justify-content:space-between;
+      padding:14px 20px; margin-bottom:20px;
+      border:1px solid rgba(0,255,136,0.3);
+      background:rgba(0,255,136,0.05); border-radius:8px;
+      flex-wrap:wrap; gap:10px;
+    }
+    .pb-left { display:flex; align-items:center; gap:16px; }
+    .pb-title { font-size:0.6rem; letter-spacing:3px; text-transform:uppercase; color:#3a6a4a; }
+    .pb-price { font-family:'Share Tech Mono',monospace; font-size:1.6rem; color:var(--green); }
+    .pb-sub   { font-size:0.65rem; color:#4a8a6a; margin-top:2px; }
+    .pb-right { font-family:'Share Tech Mono',monospace; font-size:0.75rem; color:#4a8a6a; }
+    .live-dot {
+      display:inline-block; width:6px; height:6px;
+      border-radius:50%; background:var(--green);
+      margin-right:6px; animation:pulse 1.5s infinite;
+    }
+
+    /* METRICS */
+    .metrics-row {
+      display:grid; grid-template-columns:repeat(4,1fr);
+      gap:12px; margin-bottom:20px;
+    }
+    @media(max-width:768px) { .metrics-row { grid-template-columns:1fr 1fr; } }
+
+    .metric-card {
+      background:var(--panel); border:1px solid var(--border);
+      border-radius:8px; padding:14px 16px;
+    }
+    .mc-lbl { font-size:0.6rem; color:#3a6a4a; letter-spacing:2px; text-transform:uppercase; margin-bottom:6px; }
+    .mc-val { font-family:'Share Tech Mono',monospace; font-size:1.4rem; color:var(--green); }
+    .mc-sub { font-size:0.65rem; color:#4a8a6a; margin-top:4px; }
+
+    /* GRID */
+    .dash-grid { display:grid; grid-template-columns:1fr 1fr; gap:16px; margin-bottom:20px; }
+    @media(max-width:768px) { .dash-grid { grid-template-columns:1fr; } }
+
+    .card { background:var(--panel); border:1px solid var(--border); border-radius:8px; padding:16px; }
+    .card-title {
+      font-size:0.6rem; letter-spacing:3px; text-transform:uppercase;
+      color:#2a5a3a; margin-bottom:12px;
+      display:flex; align-items:center; gap:6px;
+    }
+    .card-title::before { content:''; display:block; width:20px; height:1px; background:var(--green); }
+    .chart-wrap { height:220px; position:relative; }
+
+    /* TAUX TABLE */
+    .rate-row {
+      display:flex; justify-content:space-between; align-items:center;
+      padding:9px 12px; margin-bottom:5px;
+      border:1px solid var(--border); border-radius:5px;
+      background:rgba(0,255,136,0.02);
+    }
+    .rr-name { font-size:0.8rem; color:#c8f0d8; font-weight:600; }
+    .rr-co2  { font-family:'Share Tech Mono',monospace; font-size:0.85rem; color:#4a8a6a; }
+    .rr-tnd  { font-family:'Share Tech Mono',monospace; font-size:0.9rem; color:var(--green); }
+    .rr-bar  { height:2px; background:rgba(255,255,255,0.05); border-radius:1px; margin-top:5px; }
+    .rr-fill { height:100%; border-radius:1px; background:linear-gradient(90deg,#00ff8820,var(--green)); }
+
+    /* PROJECTION */
+    .proj-row {
+      display:flex; justify-content:space-between;
+      padding:8px 0; border-bottom:1px solid rgba(0,255,136,0.08);
+    }
+    .proj-year { font-family:'Share Tech Mono',monospace; font-size:0.8rem; color:#4a8a6a; }
+    .proj-tnd  { font-family:'Share Tech Mono',monospace; font-size:0.85rem; color:var(--green); }
+
+    .hint-msg {
+      text-align:center; padding:30px;
+      font-size:0.75rem; color:#3a6a4a;
+      font-family:'Share Tech Mono',monospace; line-height:2;
+    }
+  </style>
+</head>
+<body>
+
+<div id="header">
+  <h1><span class="pulse-dot"></span>Culture Phoenix — Dashboard Crédits Carbone</h1>
+  <nav class="nav-links">
+    <a href="/static/culture/carte_culture.html"    class="nav-btn">Carte</a>
+    <a href="/static/culture/resultats_culture.html" class="nav-btn">Résultats</a>
+    <a href="/static/culture/dashboard_carbone.html" class="nav-btn active">Carbone</a>
+  </nav>
+</div>
+
+<div id="content">
+  <div id="loading" class="hint-msg">Chargement données Carbonmark...</div>
+  <div id="dashboard" style="display:none"></div>
+</div>
+
+<script>
+async function init() {
+  try {
+    // Charger prix + taux depuis l'API
+    const [priceRes, ratesRes] = await Promise.all([
+      fetch('/culture/carbon/price'),
+      fetch('/culture/carbon/rates')
+    ]);
+    const price = await priceRes.json();
+    const rates = await ratesRes.json();
+
+    // Données dernière parcelle analysée
+    const lastData = JSON.parse(localStorage.getItem('culture_last') || 'null');
+
+    document.getElementById('loading').style.display = 'none';
+    document.getElementById('dashboard').style.display = 'block';
+
+    renderDashboard(price, rates, lastData);
+  } catch(e) {
+    document.getElementById('loading').innerHTML =
+      '<div style="color:#ff3355">Erreur chargement API: ' + e.message + '</div>';
+  }
+}
+
+function renderDashboard(price, rates, lastData) {
+  const dash = document.getElementById('dashboard');
+
+  // Données parcelle active
+  const hasParcel = lastData && lastData.recommandations;
+  const top        = hasParcel ? lastData.recommandations[0] : null;
+  const sup        = hasParcel ? lastData.superficie_ha : 1;
+
+  dash.innerHTML = `
+
+    <!-- PRIX BANNER -->
+    <div class="price-banner">
+      <div class="pb-left">
+        <div>
+          <div class="pb-title">Prix marché crédits carbone</div>
+          <div class="pb-price">${price.prix_usd_tonne} USD<span style="font-size:1rem;color:#4a8a6a">/t</span></div>
+          <div class="pb-sub">${price.prix_tnd_tonne} TND/tonne CO₂</div>
+        </div>
+        <div>
+          <div class="pb-title">Source</div>
+          <div style="font-family:'Share Tech Mono',monospace;font-size:0.8rem;color:var(--green);margin-top:6px">
+            ${price.source}
+          </div>
+        </div>
+      </div>
+      <div class="pb-right">
+        <span class="live-dot"></span>Données temps réel
+      </div>
+    </div>
+
+    <!-- METRICS -->
+    <div class="metrics-row">
+      <div class="metric-card">
+        <div class="mc-lbl">Plante recommandée</div>
+        <div class="mc-val" style="font-size:0.9rem">${hasParcel ? top.name : '—'}</div>
+        <div class="mc-sub">${hasParcel ? top.scientname : 'Analysez une parcelle'}</div>
+      </div>
+      <div class="metric-card">
+        <div class="mc-lbl">CO₂ séquestré/an</div>
+        <div class="mc-val">${hasParcel ? top.carbon.tCO2_total_an : '—'}<span style="font-size:0.8rem"> t</span></div>
+        <div class="mc-sub">${hasParcel ? top.carbon.tCO2_ha_an + ' t/ha/an' : ''}</div>
+      </div>
+      <div class="metric-card">
+        <div class="mc-lbl">Revenu annuel</div>
+        <div class="mc-val">${hasParcel ? top.carbon.revenu_tnd_an : '—'}<span style="font-size:0.8rem"> TND</span></div>
+        <div class="mc-sub">${hasParcel ? top.carbon.revenu_usd_an + ' USD' : ''}</div>
+      </div>
+      <div class="metric-card">
+        <div class="mc-lbl">Revenu 5 ans</div>
+        <div class="mc-val">${hasParcel ? top.carbon.revenu_tnd_5ans : '—'}<span style="font-size:0.8rem"> TND</span></div>
+        <div class="mc-sub">${hasParcel ? sup + ' ha · Gold Standard' : ''}</div>
+      </div>
+    </div>
+
+    <div class="dash-grid">
+
+      <!-- TAUX PAR GENRE -->
+      <div class="card">
+        <div class="card-title">Taux de séquestration par genre</div>
+        ${rates.taux.map(r => `
+          <div class="rate-row">
+            <div>
+              <div class="rr-name">${r.genre}</div>
+              <div class="rr-bar">
+                <div class="rr-fill" style="width:${(r.tCO2_ha_an/12)*100}%"></div>
+              </div>
+            </div>
+            <div style="text-align:right">
+              <div class="rr-co2">${r.tCO2_ha_an} tCO₂/ha</div>
+              <div class="rr-tnd">${r.revenu_tnd_an} TND/ha</div>
+            </div>
+          </div>`).join('')}
+      </div>
+
+      <!-- CHART + PROJECTION -->
+      <div style="display:flex;flex-direction:column;gap:16px">
+
+        <div class="card">
+          <div class="card-title">Revenus par genre (TND/ha/an)</div>
+          <div class="chart-wrap">
+            <canvas id="rates-chart"></canvas>
+          </div>
+        </div>
+
+        ${hasParcel ? `
+        <div class="card">
+          <div class="card-title">Projection revenus — ${top.name}</div>
+          ${[1,2,3,4,5].map(y => `
+            <div class="proj-row">
+              <span class="proj-year">Année ${y}</span>
+              <span class="proj-tnd">${(top.carbon.revenu_tnd_an * y).toFixed(0)} TND</span>
+            </div>`).join('')}
+          <div class="proj-row" style="border:none;margin-top:6px">
+            <span style="font-size:0.7rem;color:#3a6a4a;letter-spacing:1px">TOTAL 5 ANS</span>
+            <span class="proj-tnd" style="color:var(--yellow)">${top.carbon.revenu_tnd_5ans} TND</span>
+          </div>
+        </div>` : `
+        <div class="card">
+          <div class="hint-msg">Analysez une parcelle<br>pour voir la projection</div>
+        </div>`}
+
+      </div>
+    </div>`;
+
+  // Chart taux
+  const ctx = document.getElementById('rates-chart').getContext('2d');
+  new Chart(ctx, {
+    type:'bar',
+    data:{
+      labels: rates.taux.map(r => r.genre),
+      datasets:[{
+        data:            rates.taux.map(r => r.revenu_tnd_an),
+        backgroundColor: rates.taux.map(r =>
+          hasParcel && top.scientname.toUpperCase().startsWith(r.genre)
+            ? 'rgba(0,255,136,0.7)' : 'rgba(0,255,136,0.15)'),
+        borderColor:     rates.taux.map(r =>
+          hasParcel && top.scientname.toUpperCase().startsWith(r.genre)
+            ? '#00ff88' : 'rgba(0,255,136,0.3)'),
+        borderWidth:1, borderRadius:4,
+      }]
+    },
+    options:{
+      responsive:true, maintainAspectRatio:false,
+      plugins:{ legend:{ display:false } },
+      scales:{
+        x:{ ticks:{ color:'#4a8a6a', font:{size:9} }, grid:{ color:'rgba(0,255,136,0.05)' } },
+        y:{ ticks:{ color:'#4a8a6a' }, grid:{ color:'rgba(0,255,136,0.05)' } }
+      }
+    }
+  });
+}
+
+init();
+// Rafraîchir prix toutes les 5 min
+setInterval(init, 300000);
+</script>
+</body>
+</html>

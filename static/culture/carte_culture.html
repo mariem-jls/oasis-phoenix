@@ -76,29 +76,31 @@
 
     /* PANEL */
     #panel {
-      width:340px; background:var(--panel);
+      width:420px; background:var(--panel);
       border-left:1px solid var(--border);
       display:flex; flex-direction:column;
       overflow-y:auto; z-index:10;
+      box-shadow: -10px 0 30px rgba(0,0,0,0.2);
     }
-    #panel::-webkit-scrollbar { width:3px; }
-    #panel::-webkit-scrollbar-thumb { background:var(--border); }
+    #panel::-webkit-scrollbar { width:4px; }
+    #panel::-webkit-scrollbar-thumb { background:rgba(0,255,136,0.3); border-radius:10px; }
 
-    .pcard { border-bottom:1px solid var(--border); padding:14px 16px; }
+    .pcard { border-bottom:1px solid var(--border); padding:24px 20px; }
     .pcard-title {
-      font-size:0.6rem; letter-spacing:3px; text-transform:uppercase;
-      color:#2a5a3a; margin-bottom:10px;
-      display:flex; align-items:center; gap:6px;
+      font-size:0.75rem; letter-spacing:4px; text-transform:uppercase;
+      color:var(--green); margin-bottom:16px;
+      display:flex; align-items:center; gap:8px;
+      font-weight: 700;
     }
-    .pcard-title::before { content:''; display:block; width:20px; height:1px; background:var(--green); }
+    .pcard-title::before { content:''; display:block; width:30px; height:2px; background:var(--green); box-shadow: 0 0 10px var(--green); }
 
-    .metric { display:flex; justify-content:space-between; align-items:center; margin-bottom:6px; }
-    .metric-label { font-size:0.72rem; color:#4a7a5a; }
-    .metric-val   { font-family:'Share Tech Mono',monospace; font-size:0.85rem; color:var(--green); }
+    .metric { display:flex; justify-content:space-between; align-items:center; margin-bottom:12px; }
+    .metric-label { font-size:0.85rem; color:rgba(220,255,240,0.8); }
+    .metric-val   { font-family:'Share Tech Mono',monospace; font-size:1.1rem; color:var(--green); text-shadow: 0 0 10px rgba(0,255,136,0.3); }
 
     .hint-msg {
-      text-align:center; padding:30px 10px;
-      font-size:0.75rem; color:#3a6a4a;
+      text-align:center; padding:40px 20px;
+      font-size:0.9rem; color:rgba(220,255,240,0.6);
       font-family:'Share Tech Mono',monospace; line-height:2;
     }
 
@@ -140,8 +142,8 @@
       background:rgba(0,255,136,0.04); border:1px solid var(--border);
       border-radius:4px; padding:7px 10px;
     }
-    .terrain-lbl { font-size:0.6rem; color:#3a6a4a; letter-spacing:1px; text-transform:uppercase; }
-    .terrain-val { font-family:'Share Tech Mono',monospace; font-size:0.85rem; color:var(--green); margin-top:2px; }
+    .terrain-lbl { font-size:0.7rem; color:rgba(220,255,240,0.7); letter-spacing:1px; text-transform:uppercase; margin-bottom:4px; }
+    .terrain-val { font-family:'Share Tech Mono',monospace; font-size:1rem; color:var(--green); }
 
     .leaflet-tile { filter:brightness(0.55) saturate(0.7) hue-rotate(60deg); }
     .leaflet-container { background:#050d12; }
@@ -179,6 +181,14 @@
       <span class="logo-sub-text">AI HEALING GABÈS</span>
     </div>
   </a>
+
+  <div style="margin-left: auto; margin-right: 20px; display: flex; align-items: center; gap: 15px;">
+     <div style="font-size:11px; color:var(--green); background:rgba(29,158,117,.12);
+      border:1px solid rgba(29,158,117,.3); padding:3px 10px; border-radius:20px;
+      display:flex; align-items:center; gap:5px; font-family:'Share Tech Mono';">
+      <div class="pulse-dot" style="width:6px; height:6px; margin:0"></div>Rafraîchissement 30s
+    </div>
+  </div>
 
   <nav class="nav-links">
     <a href="/" class="nav-btn">Accueil</a>
@@ -246,7 +256,52 @@
   </div>
 </div>
 
+<!-- OVERLAY MODAL RESULTAT -->
+<div id="result-modal" style="display:none; position:fixed; inset:0; z-index:9999; background:rgba(5,13,18,0.85); backdrop-filter:blur(8px); align-items:center; justify-content:center; opacity:0; transition:opacity 0.4s ease;">
+  <div style="background:linear-gradient(145deg, rgba(22,36,49,0.95), rgba(12,22,30,0.95)); border:1px solid var(--green); border-radius:16px; padding:40px; max-width:500px; width:90%; text-align:center; box-shadow:0 0 40px rgba(0,255,136,0.2), inset 0 0 20px rgba(0,255,136,0.05); position:relative; transform:translateY(30px); transition:transform 0.4s cubic-bezier(0.175, 0.885, 0.32, 1.275);" id="result-modal-box">
+    
+    <button onclick="closeModal()" style="position:absolute; top:15px; right:20px; background:transparent; border:none; color:rgba(220,255,240,0.6); font-size:2rem; cursor:pointer; transition:color 0.2s;" onmouseover="this.style.color='#fff'" onmouseout="this.style.color='rgba(220,255,240,0.6)'">&times;</button>
+
+    <div style="font-family:'Share Tech Mono',monospace; font-size:0.85rem; color:var(--green); letter-spacing:4px; text-transform:uppercase; margin-bottom:24px; font-weight:700;">
+      <svg width="20" height="20" viewBox="0 0 24 24" fill="currentColor" style="vertical-align:bottom; margin-right:6px; filter:drop-shadow(0 0 5px rgba(0,255,136,0.5));">
+        <path d="M12 2L15.09 8.26L22 9.27L17 14.14L18.18 21.02L12 17.77L5.82 21.02L7 14.14L2 9.27L8.91 8.26L12 2Z"/>
+      </svg>
+      Top Recommandation
+    </div>
+
+    <div id="modal-img-wrap" style="width:120px; height:120px; border-radius:50%; margin:0 auto 20px; border:2px solid var(--green); box-shadow:0 0 20px rgba(0,255,136,0.4); overflow:hidden;">
+      <img id="modal-img" src="" style="width:100%; height:100%; object-fit:cover;">
+    </div>
+
+    <h2 id="modal-title" style="font-size:2.2rem; font-weight:900; color:#fff; margin-bottom:4px;">—</h2>
+    <div id="modal-sci" style="font-size:1rem; color:rgba(220,255,240,0.7); font-style:italic; margin-bottom:30px;">—</div>
+
+    <div style="display:flex; justify-content:center; gap:40px; margin-bottom:40px; border-top:1px solid rgba(0,255,136,0.2); border-bottom:1px solid rgba(0,255,136,0.2); padding:16px 0;">
+      <div>
+        <div id="modal-conf" style="font-family:'Share Tech Mono',monospace; font-size:2rem; color:var(--green); text-shadow:0 0 10px rgba(0,255,136,0.3); line-height:1;">—%</div>
+        <div style="font-size:0.7rem; color:rgba(220,255,240,0.6); text-transform:uppercase; letter-spacing:1px; margin-top:6px;">Confiance IA</div>
+      </div>
+      <div>
+        <div id="modal-co2" style="font-family:'Share Tech Mono',monospace; font-size:2rem; color:var(--green); text-shadow:0 0 10px rgba(0,255,136,0.3); line-height:1;">—t</div>
+        <div style="font-size:0.7rem; color:rgba(220,255,240,0.6); text-transform:uppercase; letter-spacing:1px; margin-top:6px;">CO₂/ha/an</div>
+      </div>
+    </div>
+
+    <button onclick="window.location='/static/culture/resultats_culture.html'" style="background:var(--green); color:#050d12; border:none; border-radius:8px; padding:18px 32px; font-family:'Share Tech Mono',monospace; font-size:1.1rem; font-weight:700; letter-spacing:2px; text-transform:uppercase; cursor:pointer; width:100%; box-shadow:0 0 20px rgba(0,255,136,0.3); transition:all 0.2s;" onmouseover="this.style.transform='translateY(-2px)'; this.style.boxShadow='0 0 30px rgba(0,255,136,0.6)'" onmouseout="this.style.transform='translateY(0)'; this.style.boxShadow='0 0 20px rgba(0,255,136,0.3)'">
+      Consulter le rapport complet
+    </button>
+  </div>
+</div>
+
 <script>
+function closeModal() {
+  const modal = document.getElementById('result-modal');
+  modal.style.opacity = '0';
+  document.getElementById('result-modal-box').style.transform = 'translateY(30px)';
+  setTimeout(() => { modal.style.display = 'none'; }, 400);
+}
+
+
 // ── MAP INIT ──────────────────────────────────────────────
 const map = L.map('map', { zoomControl:false }).setView([33.88, 10.10], 8);
 L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png', {
@@ -299,6 +354,32 @@ map.on('click', async function(e) {
 
     document.getElementById('ticker').textContent =
       `ANALYSE TERMINÉE — ${data.recommandations[0].name}`;
+
+    // POPUP DE MISE EN VALEUR
+    const topRec = data.recommandations[0];
+    const modal = document.getElementById('result-modal');
+    
+    // Remplissage des données
+    const imgElem = document.getElementById('modal-img');
+    const imgWrap = document.getElementById('modal-img-wrap');
+    if (topRec.image_url) {
+      imgElem.src = topRec.image_url;
+      imgElem.style.display = 'block';
+      imgWrap.style.display = 'block';
+    } else {
+      imgWrap.style.display = 'none';
+    }
+    
+    document.getElementById('modal-title').textContent = topRec.nom_commun_fr || topRec.name;
+    document.getElementById('modal-sci').textContent = topRec.scientname;
+    document.getElementById('modal-conf').textContent = topRec.confiance_pct + '%';
+    document.getElementById('modal-co2').textContent = topRec.carbon.tCO2_ha_an + 't';
+    
+    // Affichage avec animation
+    modal.style.display = 'flex';
+    void modal.offsetWidth; // force reflow
+    modal.style.opacity = '1';
+    document.getElementById('result-modal-box').style.transform = 'translateY(0)';
 
   } catch(err) {
     document.getElementById('terrain-content').innerHTML =

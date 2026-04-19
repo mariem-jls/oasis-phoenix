@@ -57,10 +57,10 @@
       flex-wrap:wrap; gap:10px;
     }
     .pb-left { display:flex; align-items:center; gap:16px; }
-    .pb-title { font-size:0.6rem; letter-spacing:3px; text-transform:uppercase; color:#3a6a4a; }
-    .pb-price { font-family:'Share Tech Mono',monospace; font-size:1.6rem; color:var(--green); }
-    .pb-sub   { font-size:0.65rem; color:#4a8a6a; margin-top:2px; }
-    .pb-right { font-family:'Share Tech Mono',monospace; font-size:0.75rem; color:#4a8a6a; }
+    .pb-title { font-size:0.75rem; letter-spacing:3px; text-transform:uppercase; color:var(--green); font-weight:700; }
+    .pb-price { font-family:'Share Tech Mono',monospace; font-size:1.8rem; color:var(--green); text-shadow: 0 0 15px rgba(0,255,136,0.3); }
+    .pb-sub   { font-size:0.8rem; color:rgba(220,255,240,0.7); margin-top:4px; }
+    .pb-right { font-family:'Share Tech Mono',monospace; font-size:0.9rem; color:rgba(220,255,240,0.6); }
     .live-dot {
       display:inline-block; width:6px; height:6px;
       border-radius:50%; background:var(--green);
@@ -76,23 +76,25 @@
 
     .metric-card {
       background:var(--panel); border:1px solid var(--border);
-      border-radius:8px; padding:14px 16px;
+      border-radius:12px; padding:20px 24px;
+      box-shadow: 0 4px 15px rgba(0,0,0,0.2);
     }
-    .mc-lbl { font-size:0.6rem; color:#3a6a4a; letter-spacing:2px; text-transform:uppercase; margin-bottom:6px; }
-    .mc-val { font-family:'Share Tech Mono',monospace; font-size:1.4rem; color:var(--green); }
-    .mc-sub { font-size:0.65rem; color:#4a8a6a; margin-top:4px; }
+    .mc-lbl { font-size:0.7rem; color:var(--green); letter-spacing:2px; text-transform:uppercase; margin-bottom:10px; font-weight:700; }
+    .mc-val { font-family:'Share Tech Mono',monospace; font-size:1.6rem; color:#ffffff; }
+    .mc-sub { font-size:0.8rem; color:rgba(220,255,240,0.7); margin-top:6px; }
 
     /* GRID */
     .dash-grid { display:grid; grid-template-columns:1fr 1fr; gap:16px; margin-bottom:20px; }
     @media(max-width:768px) { .dash-grid { grid-template-columns:1fr; } }
 
-    .card { background:var(--panel); border:1px solid var(--border); border-radius:8px; padding:16px; }
+    .card { background:var(--panel); border:1px solid var(--border); border-radius:12px; padding:24px 20px; box-shadow: 0 4px 15px rgba(0,0,0,0.2); }
     .card-title {
-      font-size:0.6rem; letter-spacing:3px; text-transform:uppercase;
-      color:#2a5a3a; margin-bottom:12px;
-      display:flex; align-items:center; gap:6px;
+      font-size:0.75rem; letter-spacing:4px; text-transform:uppercase;
+      color:var(--green); margin-bottom:16px;
+      display:flex; align-items:center; gap:8px;
+      font-weight: 700;
     }
-    .card-title::before { content:''; display:block; width:20px; height:1px; background:var(--green); }
+    .card-title::before { content:''; display:block; width:30px; height:2px; background:var(--green); box-shadow: 0 0 10px var(--green); }
     .chart-wrap { height:220px; position:relative; }
 
     /* TAUX TABLE */
@@ -150,6 +152,14 @@
       <span class="logo-sub-text">AI HEALING GABÈS</span>
     </div>
   </a>
+
+  <div style="margin-left: auto; margin-right: 20px; display: flex; align-items: center; gap: 15px;">
+     <div style="font-size:11px; color:var(--green); background:rgba(29,158,117,.12);
+      border:1px solid rgba(29,158,117,.3); padding:3px 10px; border-radius:20px;
+      display:flex; align-items:center; gap:5px; font-family:'Share Tech Mono';">
+      <div class="pulse-dot" style="width:6px; height:6px; margin:0"></div>Rafraîchissement 30s
+    </div>
+  </div>
 
   <nav class="nav-links">
     <a href="/" class="nav-btn">Accueil</a>

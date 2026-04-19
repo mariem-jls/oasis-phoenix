@@ -92,10 +92,14 @@ body {
 }
 
 #hero-phoenix {
-  width: min(280px, 60vw);
+  width: min(260px, 55vw);
   margin-bottom: 24px;
   opacity: 0;
-  filter: drop-shadow(0 0 30px rgba(0,255,136,0.5)) drop-shadow(0 0 60px rgba(201,168,76,0.2));
+
+  /* Glow pro */
+  filter: drop-shadow(0 0 25px rgba(0,255,136,0.5))
+          drop-shadow(0 0 50px rgba(201,168,76,0.25));
+
   animation: phoenix-float 3.5s ease-in-out infinite;
 }
 @keyframes phoenix-float { 0%,100%{transform:translateY(0)} 50%{transform:translateY(-12px)} }
@@ -247,8 +251,7 @@ footer {
 <!-- ═══ HEADER ═══ -->
 <header id="header">
   <a href="/" class="logo-wrap">
-    <svg class="logo-svg" viewBox="0 0 300 280" xmlns="http://www.w3.org/2000/svg">
-      <defs>
+    <img src="/static/phoenix-small.png" class="logo-svg" alt="logo">      <defs>
         <linearGradient id="lg1" x1="0%" y1="0%" x2="100%" y2="100%">
           <stop offset="0%" stop-color="#ccff44"/><stop offset="100%" stop-color="#006622"/>
         </linearGradient>
@@ -292,58 +295,7 @@ footer {
 <section id="hero">
 
   <!-- Phoenix SVG logo -->
-  <svg id="hero-phoenix" viewBox="0 0 300 280" xmlns="http://www.w3.org/2000/svg">
-    <defs>
-      <linearGradient id="hg1" x1="0%" y1="0%" x2="100%" y2="100%">
-        <stop offset="0%" stop-color="#ccff44"/><stop offset="40%" stop-color="#44cc22"/><stop offset="100%" stop-color="#006622"/>
-      </linearGradient>
-      <linearGradient id="hg2" x1="100%" y1="0%" x2="0%" y2="100%">
-        <stop offset="0%" stop-color="#ccff44"/><stop offset="40%" stop-color="#44cc22"/><stop offset="100%" stop-color="#006622"/>
-      </linearGradient>
-      <linearGradient id="hbg" x1="50%" y1="0%" x2="50%" y2="100%">
-        <stop offset="0%" stop-color="#88ff44"/><stop offset="100%" stop-color="#006622"/>
-      </linearGradient>
-      <linearGradient id="htg" x1="50%" y1="0%" x2="50%" y2="100%">
-        <stop offset="0%" stop-color="#ffee44"/><stop offset="100%" stop-color="#cc8800"/>
-      </linearGradient>
-      <filter id="hglow">
-        <feGaussianBlur stdDeviation="4" result="b"/>
-        <feMerge><feMergeNode in="b"/><feMergeNode in="SourceGraphic"/></feMerge>
-      </filter>
-    </defs>
-    <g filter="url(#hglow)">
-      <path d="M150,155 Q100,120 30,90 Q70,125 115,148 Z"   fill="url(#hg1)" opacity=".95"/>
-      <path d="M150,155 Q95,135 25,128 Q68,155 118,158 Z"   fill="url(#hg1)" opacity=".88"/>
-      <path d="M150,155 Q90,155 22,165 Q68,175 120,168 Z"   fill="#33aa11"   opacity=".8"/>
-      <path d="M150,155 Q95,170 35,195 Q78,190 125,175 Z"   fill="#228800"   opacity=".72"/>
-      <path d="M30,90  Q35,95 38,105 Z"  fill="#ccff44" opacity=".6"/>
-      <path d="M25,128 Q30,136 33,148 Z" fill="#ccff44" opacity=".5"/>
-    </g>
-    <g filter="url(#hglow)">
-      <path d="M150,155 Q200,120 270,90  Q230,125 185,148 Z" fill="url(#hg2)" opacity=".95"/>
-      <path d="M150,155 Q205,135 275,128 Q232,155 182,158 Z" fill="url(#hg2)" opacity=".88"/>
-      <path d="M150,155 Q210,155 278,165 Q232,175 180,168 Z" fill="#33aa11"   opacity=".8"/>
-      <path d="M150,155 Q205,170 265,195 Q222,190 175,175 Z" fill="#228800"   opacity=".72"/>
-      <path d="M270,90  Q265,95 262,105 Z" fill="#ccff44" opacity=".6"/>
-      <path d="M275,128 Q270,136 267,148 Z" fill="#ccff44" opacity=".5"/>
-    </g>
-    <g filter="url(#hglow)">
-      <path d="M145,195 Q130,230 118,270 Q135,245 148,205 Z" fill="#33aa11" opacity=".85"/>
-      <path d="M150,198 Q148,240 145,280 Q153,252 154,210 Z" fill="#44cc11" opacity=".9"/>
-      <path d="M155,195 Q170,230 182,270 Q165,245 152,205 Z" fill="#33aa11" opacity=".85"/>
-      <path d="M145,280 Q143,292 148,298 Z" fill="url(#htg)" opacity=".8"/>
-      <path d="M182,270 Q185,282 180,290 Z" fill="url(#htg)" opacity=".7"/>
-    </g>
-    <ellipse cx="150" cy="148" rx="18" ry="30" fill="url(#hbg)" filter="url(#hglow)"/>
-    <path d="M142,120 Q138,100 142,88 Q150,95 158,88 Q162,100 158,120 Z" fill="#55dd22" filter="url(#hglow)"/>
-    <ellipse cx="150" cy="82" rx="16" ry="16" fill="#77ee33" filter="url(#hglow)"/>
-    <path d="M150,66 Q147,50 150,38 Q153,50 150,66Z" fill="url(#htg)" opacity=".95"/>
-    <path d="M143,68 Q137,53 139,41 Q144,56 145,69Z" fill="#ffcc44" opacity=".75"/>
-    <path d="M157,68 Q163,53 161,41 Q156,56 155,69Z" fill="#ffcc44" opacity=".75"/>
-    <circle cx="156" cy="79" r="4" fill="#ccff44"/>
-    <circle cx="157" cy="79" r="2" fill="#001a00"/>
-    <path d="M150,92 Q143,100 145,106 Q150,100 155,106 Q157,100 150,92Z" fill="url(#htg)"/>
-  </svg>
+<img id="hero-phoenix" src="/static/phoenix.png" alt="Oasis Phoenix Logo">
 
   <h1 id="hero-title">OASIS PHOENIX</h1>
   <p id="hero-sub">INTELLIGENCE ARTIFICIELLE · GABÈS · TUNISIE</p>
@@ -428,8 +380,7 @@ footer {
 
 <!-- ═══ FOOTER ═══ -->
 <footer>
-  <svg class="footer-logo" viewBox="0 0 300 280" xmlns="http://www.w3.org/2000/svg">
-    <path d="M150,155 Q100,120 30,90 Q70,125 115,148 Z"  fill="#44cc22" opacity=".8"/>
+<img src="/static/phoenix-small.png" class="logo-svg" alt="logo">    <path d="M150,155 Q100,120 30,90 Q70,125 115,148 Z"  fill="#44cc22" opacity=".8"/>
     <path d="M150,155 Q200,120 270,90 Q230,125 185,148 Z" fill="#44cc22" opacity=".8"/>
     <ellipse cx="150" cy="148" rx="16" ry="28" fill="#66dd22"/>
     <ellipse cx="150" cy="82"  rx="14" ry="14" fill="#77ee33"/>
@@ -470,7 +421,10 @@ gsap.to('#hero-desc',    { opacity:1, y:0, duration:.8, ease:'power2.out', delay
 gsap.to('#modules',      { opacity:1, y:0, duration:.9, ease:'power2.out', delay:1.8 });
 gsap.set(['#hero-sub','#hero-desc'], { y:16 });
 gsap.set('#modules', { y:24 });
-
+gsap.fromTo('#hero-phoenix',
+  { scale: 0.8, rotate: -5 },
+  { scale: 1, rotate: 0, duration: 1.5, ease: "power3.out" }
+);
 // ── Stats counter from API ──
 async function loadStats() {
   try {

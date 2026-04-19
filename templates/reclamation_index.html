@@ -1,0 +1,509 @@
+<!DOCTYPE html>
+<html lang="fr">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0">
+<title>Oasis Phoenix — Signaler un incident</title>
+<link href="https://fonts.googleapis.com/css2?family=Share+Tech+Mono&family=Exo+2:wght@300;400;500;600&family=Cinzel:wght@400;700;900&family=Sora:wght@300;400;500;600&display=swap" rel="stylesheet">
+<link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css"/>
+<style>
+* { box-sizing:border-box; margin:0; padding:0; -webkit-tap-highlight-color:transparent; }
+:root {
+  --green:#00ff88; --yellow:#ffcc00; --red:#ff3355;
+  --blue:#00cfff;  --bg:#121c26;    --panel:#1d2a38;
+  --border:rgba(0,255,136,0.3);
+  --muted:rgba(220,255,240,0.8);
+}
+
+html,body { min-height:100vh; background:var(--bg); font-family:'Sora',sans-serif; color:#ffffff; }
+
+/* ── HEADER ── */
+#header {
+  position: sticky; top:0; z-index:100;
+  display: flex; align-items:center; justify-content:space-between;
+  padding: 10px 28px;
+  background: rgba(5,13,18,0.97);
+  border-bottom: 1px solid var(--border);
+  backdrop-filter: blur(8px);
+}
+.logo-wrap { display:flex; align-items:center; gap:14px; text-decoration:none; }
+.logo-svg { width:38px; height:38px; }
+.logo-text { font-family:'Cinzel',serif; font-size:.9rem; font-weight:700; letter-spacing:.2em; color:var(--green); text-shadow:0 0 20px rgba(0,255,136,0.5); }
+.logo-sub-text { font-family:'Share Tech Mono',monospace; font-size:.5rem; letter-spacing:.3em; color:rgba(0,255,136,0.4); display:block; margin-top:2px; }
+
+.pulse-dot { width:8px; height:8px; border-radius:50%; background:var(--green); display:inline-block; margin-right:8px; animation:pulse 1.5s infinite; }
+@keyframes pulse { 0%,100%{box-shadow:0 0 0 0 rgba(0,255,136,0.7)} 50%{box-shadow:0 0 0 6px rgba(0,255,136,0)} }
+
+.nav-links { display:flex; gap:8px; align-items: center; }
+.nav-btn {
+  font-family:'Share Tech Mono',monospace; font-size:.62rem; letter-spacing:.15em;
+  padding:7px 16px; border-radius:999px; cursor:pointer; text-decoration:none;
+  border:1px solid var(--border); background:rgba(0,255,136,0.06); color:#d2ffe6;
+  transition:all .25s;
+}
+.nav-btn:hover { background:rgba(0,255,136,0.15); border-color:rgba(0,255,136,0.4); }
+.nav-btn.active { border-color: var(--green); background: rgba(0,255,136,0.1); }
+
+/* ── BODY ── */
+.body { max-width:700px; margin:0 auto; padding:40px 20px 80px; position:relative; z-index:1; }
+
+/* ── GLASS PANELS ── */
+.card {
+  background: var(--panel);
+  border: 1px solid var(--border);
+  border-radius: 12px;
+  padding: 24px;
+  backdrop-filter: blur(10px);
+  margin-bottom: 24px;
+}
+
+/* ── SECTION LABEL ── */
+.slabel {
+  font-family: 'Share Tech Mono', monospace;
+  font-size: 0.7rem;
+  color: var(--green);
+  text-transform: uppercase;
+  letter-spacing: 2px;
+  margin-bottom: 12px;
+  display: flex; align-items: center; gap: 10px;
+}
+.slabel::after { content:''; flex:1; height:1px; background:rgba(0,255,136,0.1); }
+
+/* ── LOCATION CARD ── */
+.loc-card {
+  background:rgba(0,255,136,0.02); border:1px solid var(--border);
+  border-radius:12px; overflow:hidden; margin-bottom: 20px;
+}
+.loc-top { padding:12px 16px; display:flex; justify-content:space-between; align-items:center; gap:12px; border-bottom: 1px solid var(--border); }
+.loc-status { display:flex; align-items:center; gap:10px; font-size:13px; flex:1; min-width:0; }
+.loc-dot { width:8px; height:8px; border-radius:50%; background:#333; flex-shrink:0; }
+.loc-dot.ok   { background:var(--green); box-shadow:0 0 10px var(--green); }
+.loc-dot.busy { background:var(--yellow); animation:pulse 1.5s infinite; }
+.loc-dot.err  { background:var(--red); }
+.loc-lbl { font-family: 'Share Tech Mono', monospace; font-size:12px; color:var(--green); white-space:nowrap; overflow:hidden; text-overflow:ellipsis; }
+.loc-btn {
+  font-family:'Share Tech Mono',monospace; font-size:.65rem; letter-spacing:.1em;
+  background:rgba(0,255,136,0.1); color:#fff; border:1px solid rgba(0,255,136,0.2);
+  padding:6px 14px; border-radius:4px; cursor:pointer; transition:all .2s;
+}
+.loc-btn:hover { background:rgba(0,255,136,0.2); border-color:var(--green); }
+
+#mini-map { height:280px; width:100%; cursor:crosshair; background: #050d12; }
+.map-tip {
+  text-align:center; font-size:10px; color:rgba(0,255,136,0.4);
+  padding:8px; background:rgba(0,255,136,0.02); font-family:'Share Tech Mono', monospace;
+}
+
+/* ── TYPE GRID ── */
+.type-grid { display:grid; grid-template-columns:repeat(3,1fr); gap:12px; }
+.type-btn {
+  background:rgba(255,255,255,0.02); border:1px solid var(--border);
+  border-radius:8px; padding:20px 10px; text-align:center;
+  cursor:pointer; transition:all .25s ease; user-select:none;
+}
+.type-btn:hover { border-color:rgba(0,255,136,0.3); background:rgba(0,255,136,0.04); transform: translateY(-2px); }
+.type-btn.sel { border-color:var(--green); background:rgba(0,255,136,0.08); box-shadow: inset 0 0 15px rgba(0,255,136,0.05); }
+.type-icon {
+  width:32px; height:32px; margin:0 auto 10px;
+  display:flex; align-items:center; justify-content:center;
+  color: rgba(200,240,216,0.9);
+  transition: all 0.3s;
+}
+.type-icon svg { width:100%; height:100%; fill:none; stroke:currentColor; stroke-width:2; stroke-linecap:round; stroke-linejoin:round; }
+.type-btn.sel .type-icon { color: var(--green); filter: drop-shadow(0 0 8px rgba(0,255,136,0.5)); }
+.type-name { font-family:'Share Tech Mono', monospace; font-size:10px; color:rgba(200,240,216,0.85); letter-spacing:1px; }
+.type-btn.sel .type-name { color:var(--green); }
+
+/* ── GRAVITÉ ── */
+.grav-row { display:flex; gap:10px; }
+.grav-btn {
+  flex:1; padding:14px 6px; border-radius:8px;
+  border:1px solid var(--border); background:rgba(255,255,255,0.02);
+  font-family:'Share Tech Mono', monospace; font-size:11px; color:rgba(200,240,216,0.85);
+  text-align:center; cursor:pointer; transition:all .25s;
+}
+.grav-btn:hover { border-color:rgba(255,255,255,0.15); }
+.grav-btn.sel { border-color:var(--green); background:rgba(0,255,136,0.08); color:var(--green); }
+
+/* ── TEXTAREA ── */
+textarea {
+  width:100%; background:rgba(0,255,136,0.02); border:1px solid var(--border);
+  border-radius:12px; padding:16px; font-size:14px;
+  font-family:'Exo 2',sans-serif; color:#fff;
+  resize:none; min-height:140px; outline:none; transition:all .2s; line-height:1.6;
+}
+textarea:focus { border-color:rgba(0,255,136,0.4); background:rgba(0,255,136,0.04); }
+textarea::placeholder { color:rgba(0,255,136,0.45); }
+
+/* ── SUBMIT ── */
+.submit-btn {
+  width:100%; background:var(--green); color:#050d12; border:none;
+  border-radius:12px; padding:20px; font-size:16px; font-weight:800;
+  font-family:'Share Tech Mono',monospace; cursor:pointer; transition:all .3s; margin-top:32px;
+  text-transform: uppercase; letter-spacing: 2px;
+  box-shadow: 0 4px 20px rgba(0,255,136,0.3);
+}
+.submit-btn:hover { background:#00ffaa; transform:translateY(-3px); box-shadow: 0 8px 30px rgba(0,255,136,0.5); }
+.submit-btn:active  { transform:translateY(-1px); }
+.submit-btn:disabled { background:#1a2228; color:#4a5a50; cursor:not-allowed; box-shadow:none; }
+
+/* ── LOADING ── */
+#loading-section { display:none; padding:40px 0; }
+.load-title { font-family:'Cinzel',serif; font-size:1.2rem; text-align:center; margin-bottom:40px; color:var(--green); letter-spacing: 2px; }
+.steps { display:flex; flex-direction:column; gap:16px; max-width: 400px; margin: 0 auto; }
+.step {
+  display:flex; align-items:center; gap:20px;
+  background:var(--panel); border:1px solid var(--border);
+  border-radius:12px; padding:16px 20px; opacity:.3; transition:all .4s;
+}
+.step.active { opacity:1; border-color:var(--green); background:rgba(0,255,136,0.05); box-shadow: 0 0 20px rgba(0,255,136,0.1); }
+.step.done   { opacity:.6; border-color:rgba(0,255,136,0.2); }
+.step-icon { font-size:24px; }
+.step-name { font-family:'Share Tech Mono', monospace; font-size:13px; letter-spacing: 1px; }
+.step-spin {
+  width:20px; height:20px; border:2px solid rgba(0,255,136,0.1);
+  border-top-color:var(--green); border-radius:50%;
+  animation:spin .8s linear infinite; display:none;
+}
+.step.active .step-spin { display:block; }
+.step-check { font-size:18px; color:var(--green); display:none; }
+.step.done .step-check  { display:block; }
+@keyframes spin { to { transform:rotate(360deg); } }
+
+/* ── RESPONSE ── */
+#response-section { display:none; }
+.resp-card {
+  background:var(--panel); border-radius:16px; padding:30px;
+  border:1px solid var(--green); animation:fadeUp .6s cubic-bezier(0.2, 0.8, 0.2, 1);
+  box-shadow: 0 10px 40px rgba(0,0,0,0.5), 0 0 20px rgba(0,255,136,0.1);
+}
+@keyframes fadeUp { from{opacity:0;transform:translateY(30px)} to{opacity:1;transform:none} }
+.resp-hdr { display:flex; align-items:center; gap:16px; margin-bottom:24px; }
+.resp-check { width:40px; height:40px; border-radius:50%; background:var(--green);
+  display:flex; align-items:center; justify-content:center; color:#050d12; font-size:20px; }
+.resp-title { font-family:'Cinzel',serif; font-size:1.1rem; letter-spacing: 1px; color: var(--green); }
+.resp-body { font-size:15px; line-height:1.7; color:#c8f0d8; }
+
+.ai-analysis {
+  margin-top:24px; background:rgba(0,255,136,0.03);
+  border:1px solid var(--border); border-radius:12px; padding:20px;
+}
+.ai-analysis-title { font-family:'Share Tech Mono', monospace; font-size:0.7rem; color:var(--green);
+  text-transform:uppercase; letter-spacing:2px; margin-bottom:16px; display: flex; align-items: center; gap: 8px;}
+.ai-analysis-title::before { content: '◈'; }
+.ai-row { display:flex; justify-content:space-between; font-size:13px;
+  padding:10px 0; border-bottom: 1px solid rgba(0,255,136,0.08); }
+.ai-row:last-child { border-bottom:none; }
+.ai-key { color:rgba(0,255,136,0.5); font-family:'Share Tech Mono', monospace; }
+.ai-val { font-weight:600; color: #fff; }
+
+.cluster-box {
+  margin-top:20px; padding:16px;
+  background:rgba(255,204,0,0.05); border-radius:12px;
+  border-left:4px solid var(--yellow); font-size:13px; color: #ffe680;
+}
+
+.new-btn {
+  width:100%; margin-top:24px; background:transparent;
+  border: 1px solid rgba(0,255,136,0.3); color:var(--green);
+  border-radius:12px; padding:16px; font-size:14px; font-weight:600;
+  cursor:pointer; font-family:'Share Tech Mono', monospace; transition:all .2s;
+  text-transform: uppercase; letter-spacing: 1px;
+}
+.new-btn:hover { background:rgba(0,255,136,0.1); border-color:var(--green); }
+
+/* ── LISTE ── */
+.list-section { margin-top:60px; }
+.list-hdr { display:flex; justify-content:space-between; align-items:center; margin-bottom:20px; }
+.list-title { font-family:'Cinzel',serif; font-size:1rem; letter-spacing: 1px; color: rgba(0,255,136,0.6); }
+.sig-card {
+  background:rgba(255,255,255,0.02); border:1px solid var(--border);
+  border-radius:12px; padding:16px; margin-bottom:12px; transition: all 0.3s;
+}
+.sig-card:hover { border-color: rgba(0,255,136,0.2); background: rgba(0,255,136,0.02); }
+.sig-card-top { display:flex; justify-content:space-between; margin-bottom:10px; }
+.sig-type-badge { font-family:'Share Tech Mono', monospace; font-size:9px; font-weight:600; padding:4px 10px; border-radius:4px; background: rgba(0,255,136,0.1); color: var(--green); }
+.sig-time { font-family:'Share Tech Mono', monospace; font-size:10px; color: rgba(0,255,136,0.3); }
+.sig-text { font-size:13px; color:rgba(200,240,216,0.7); line-height:1.6; }
+
+/* ── CUSTOM SCROLL ── */
+::-webkit-scrollbar { width: 6px; }
+::-webkit-scrollbar-track { background: var(--bg); }
+::-webkit-scrollbar-thumb { background: var(--border); border-radius: 10px; }
+::-webkit-scrollbar-thumb:hover { background: rgba(0,255,136,0.3); }
+</style>
+</head>
+<body>
+
+<header id="header">
+  <a href="/" class="logo-wrap">
+    <svg class="logo-svg" viewBox="0 0 300 280" xmlns="http://www.w3.org/2000/svg">
+      <defs>
+        <linearGradient id="lg1" x1="0%" y1="0%" x2="100%" y2="100%">
+          <stop offset="0%" stop-color="#ccff44"/><stop offset="100%" stop-color="#006622"/>
+        </linearGradient>
+      </defs>
+      <path d="M150,155 Q100,120 30,90 Q70,125 115,148 Z"  fill="url(#lg1)" opacity=".95"/>
+      <path d="M150,155 Q200,120 270,90 Q230,125 185,148 Z" fill="url(#lg1)" opacity=".95"/>
+      <path d="M150,155 Q95,135 25,128 Q68,155 118,158 Z"  fill="#44cc22" opacity=".85"/>
+      <path d="M150,155 Q205,135 275,128 Q232,155 182,158 Z" fill="#44cc22" opacity=".85"/>
+      <path d="M148,195 Q138,235 125,272 Q142,248 152,205 Z" fill="#33aa11"/>
+      <path d="M152,195 Q162,235 175,272 Q158,248 148,205 Z" fill="#33aa11"/>
+      <ellipse cx="150" cy="148" rx="18" ry="30" fill="#66dd22"/>
+      <ellipse cx="150" cy="82"  rx="16" ry="16" fill="#77ee33"/>
+      <path d="M150,66 Q147,50 150,38 Q153,50 150,66Z" fill="#ffcc44"/>
+      <path d="M143,68 Q137,53 139,41 Q144,56 145,69Z" fill="#ffcc44" opacity=".75"/>
+      <path d="M157,68 Q163,53 161,41 Q156,56 155,69Z" fill="#ffcc44" opacity=".75"/>
+    </svg>
+    <div>
+      <span class="logo-text">OASIS PHOENIX</span>
+      <span class="logo-sub-text">AI HEALING GABÈS</span>
+    </div>
+  </a>
+
+  <nav class="nav-links">
+    <a href="/" class="nav-btn">Accueil</a>
+    <a href="/dashboard" class="nav-btn">Surveillance</a>
+    <a href="/reclamation/dashboard" class="nav-btn active"><span class="pulse-dot" style="width:5px;height:5px;margin-right:5px"></span>Signaler</a>
+    <a href="/culture" class="nav-btn">Culture</a>
+    <a href="/culture/carbone" class="nav-btn">Carbone</a>
+  </nav>
+</header>
+
+
+<div class="body">
+
+  <div style="margin-bottom:40px; text-align: center;">
+    <h1 style="font-family:'Cinzel',serif; font-size:2.2rem; font-weight:900; color:var(--green); text-shadow:0 0 30px rgba(0,255,136,0.3); margin-bottom:12px;">SIGNELER UN INCIDENT</h1>
+    <p style="font-size:1rem; color:rgba(220,255,240,0.85); line-height:1.6; max-width: 500px; margin: 0 auto;">
+      <span style="color:var(--green)">◈</span> Contribuez à la protection de l'Oasis de Gabès en signalant tout problème environnemental observé dans votre zone.
+    </p>
+  </div>
+
+  <div id="form-section" class="card">
+
+    <div class="slabel">Localisation</div>
+    <div class="loc-card">
+      <div class="loc-top">
+        <div class="loc-status">
+          <div class="loc-dot" id="loc-dot"></div>
+          <span class="loc-lbl" id="loc-lbl">Cliquez sur la carte</span>
+        </div>
+        <button class="loc-btn" onclick="getGPS()">Me localiser</button>
+      </div>
+      <div id="mini-map"></div>
+      <div class="map-tip">Appuyez sur la carte pour placer le marqueur</div>
+    </div>
+
+    <div class="slabel">Type de problème</div>
+    <div class="type-grid">
+      <div class="type-btn" data-type="pollution_air" onclick="selType(this)">
+        <div class="type-icon"><svg viewBox="0 0 24 24"><path d="M17.7 7.7a2.5 2.5 0 1 1 1.8 4.3H2 M9.6 4.6A2 2 0 1 1 11 8H2 M12.6 19.4A2 2 0 1 0 14 16H2"/></svg></div>
+        <div class="type-name">Air</div>
+      </div>
+      <div class="type-btn" data-type="pollution_sol" onclick="selType(this)">
+        <div class="type-icon"><svg viewBox="0 0 24 24"><path d="M7 20h10 M10 20c5.5 0 5.5-10 5.5-10 M14 20c-5.5 0-5.5-10-5.5-10 M12 20V9"/></svg></div>
+        <div class="type-name">Sol</div>
+      </div>
+      <div class="type-btn" data-type="pollution_eau" onclick="selType(this)">
+        <div class="type-icon"><svg viewBox="0 0 24 24"><path d="M12 2.69l5.66 5.66a8 8 0 1 1-11.31 0z"/></svg></div>
+        <div class="type-name">Eau</div>
+      </div>
+      <div class="type-btn" data-type="vegetation" onclick="selType(this)">
+        <div class="type-icon"><svg viewBox="0 0 24 24"><path d="M11 20A7 7 0 0 1 9.8 6.1C15.5 5 17 4.48 19 2c1 2 2 3.5 1 9.2a7 7 0 0 1-9 8.8zm0 0v-2"/></svg></div>
+        <div class="type-name">Plantes</div>
+      </div>
+      <div class="type-btn" data-type="sante" onclick="selType(this)">
+        <div class="type-icon"><svg viewBox="0 0 24 24"><path d="M16 4h4a2 2 0 0 1 2 2v14a2 2 0 0 1-2 2H4a2 2 0 0 1-2-2V6a2 2 0 0 1 2-2h4 M8 2v4 M16 2v4 M3 10h18 M12 14v4 M10 16h4"/></svg></div>
+        <div class="type-name">Santé</div>
+      </div>
+      <div class="type-btn" data-type="autre" onclick="selType(this)">
+        <div class="type-icon"><svg viewBox="0 0 24 24"><path d="M20 10c0 6-8 12-8 12s-8-6-8-12a8 8 0 0 1 16 0z M12 10a3 3 0 1 0 0-6 3 3 0 0 0 0 6z"/></svg></div>
+        <div class="type-name">Autre</div>
+      </div>
+    </div>
+
+
+    <div class="slabel">Gravité</div>
+    <div class="grav-row">
+      <div class="grav-btn" data-g="1" onclick="selGrav(this)">Mineur</div>
+      <div class="grav-btn" data-g="3" onclick="selGrav(this)">Modéré</div>
+      <div class="grav-btn" data-g="5" onclick="selGrav(this)">Urgent</div>
+    </div>
+
+
+    <div class="slabel">Description</div>
+    <textarea id="texte" maxlength="500" placeholder="Décrivez ce que vous observez..."></textarea>
+
+    <button class="submit-btn" id="submit-btn" onclick="soumettre()">Envoyer le signalement</button>
+  </div>
+
+  <div id="loading-section">
+    <div class="load-title">Analyse intelligente en cours...</div>
+    <div class="steps">
+      <div class="step" id="step-0"><div class="step-icon"><svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M2 20h.01M7 20v-4M12 20v-8M17 20V8M22 20V4"/></svg></div><div class="step-name">Envoi</div><div class="step-spin"></div><div class="step-check">✓</div></div>
+      <div class="step" id="step-1"><div class="step-icon"><svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="11" cy="11" r="8"/><line x1="21" y1="21" x2="16.65" y2="16.65"/></svg></div><div class="step-name">Analyse sémantique</div><div class="step-spin"></div><div class="step-check">✓</div></div>
+      <div class="step" id="step-2"><div class="step-icon"><svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M11 20A7 7 0 0 1 9.8 6.1C15.5 5 17 4.48 19 2c1 2 2 3.5 1 9.2a7 7 0 0 1-9 8.8zm0 0v-2"/></svg></div><div class="step-name">Classification</div><div class="step-spin"></div><div class="step-check">✓</div></div>
+      <div class="step" id="step-3"><div class="step-icon"><svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M10.29 3.86L1.82 18a2 2 0 0 0 1.71 3h16.94a2 2 0 0 0 1.71-3L13.71 3.86a2 2 0 0 0-3.42 0zM12 9v4M12 17h.01"/></svg></div><div class="step-name">Évaluation</div><div class="step-spin"></div><div class="step-check">✓</div></div>
+    </div>
+
+  </div>
+
+  <div id="response-section">
+    <div class="resp-card">
+      <div class="resp-hdr"><div class="resp-check">✓</div><div class="resp-title">Signalement enregistré</div></div>
+      <div class="resp-body" id="resp-body"></div>
+      <div class="ai-analysis">
+        <div class="ai-analysis-title">Analyse IA</div>
+        <div class="ai-row"><span class="ai-key">Type détecté</span><span class="ai-val" id="ai-type">—</span></div>
+        <div class="ai-row"><span class="ai-key">Gravité</span><span class="ai-val" id="ai-grav">—</span></div>
+        <div class="ai-row"><span class="ai-key">Zone identifiée</span><span class="ai-val" id="ai-zone">—</span></div>
+        <div class="ai-row"><span class="ai-key">Groupe d'incidents</span><span class="ai-val" id="ai-cluster">—</span></div>
+      </div>
+      <div class="cluster-box" id="cluster-box" style="display:none;"></div>
+    </div>
+    <button class="new-btn" onclick="nouveau()">+ Nouveau signalement</button>
+  </div>
+
+  <div class="list-section" id="list-section">
+    <div class="list-hdr"><div class="list-title">Signalements récents</div></div>
+    <div id="sig-list"></div>
+  </div>
+
+</div>
+
+<script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js"></script>
+<script>
+let selType_ = null, selGrav_ = null, userLat = null, userLng = null, zoneName = "Non précisée";
+let miniMap = null, miniMarker = null;
+
+function getGPS() {
+  setLocState('busy', 'Détection GPS...');
+  navigator.geolocation.getCurrentPosition(
+    pos => {
+      userLat = pos.coords.latitude; userLng = pos.coords.longitude;
+      setLocState('ok', 'Position trouvée ✓');
+      updateMap(userLat, userLng);
+      updateLocationName(userLat, userLng);
+    },
+    () => { setLocState('err', 'GPS indisponible'); initMap(33.88, 9.99); },
+    { timeout: 5000 }
+  );
+}
+
+function initMap(lat, lng) {
+  if (miniMap) return;
+  miniMap = L.map('mini-map', { zoomControl:false, attributionControl:false }).setView([lat,lng], 13);
+  
+  // Couche Satellite (Esri)
+  L.tileLayer('https://server.arcgisonline.com/ArcGIS/rest/services/World_Imagery/MapServer/tile/{z}/{y}/{x}').addTo(miniMap);
+  
+  // Couche Labels transparents pour voir les noms des rues par dessus
+  L.tileLayer('https://{s}.basemaps.cartocdn.com/light_only_labels/{z}/{x}/{y}{r}.png', {
+    subdomains: 'abcd',
+    pane: 'shadowPane' // Pour que les labels soient au-dessus des marqueurs si besoin, ou juste au dessus de la map
+  }).addTo(miniMap);
+
+  miniMarker = L.marker([lat,lng], { draggable:true }).addTo(miniMap);
+  
+  miniMarker.on('dragend', () => {
+    const p = miniMarker.getLatLng();
+    userLat = p.lat; userLng = p.lng;
+    updateLocationName(p.lat, p.lng);
+  });
+
+  miniMap.on('click', e => {
+    userLat = e.latlng.lat; userLng = e.latlng.lng;
+    miniMarker.setLatLng(e.latlng);
+    updateLocationName(userLat, userLng);
+    setLocState('ok', 'Position définie ✓');
+  });
+}
+
+function updateMap(lat, lng) {
+  if (!miniMap) initMap(lat, lng);
+  else { miniMap.setView([lat,lng], 14); miniMarker.setLatLng([lat,lng]); }
+}
+
+async function updateLocationName(lat, lng) {
+  try {
+    const res = await fetch(`https://nominatim.openstreetmap.org/reverse?format=json&lat=${lat}&lon=${lng}&zoom=18&addressdetails=1`);
+    const data = await res.json();
+    if (data && data.address) {
+      const a = data.address;
+      // Construction d'un nom plus complet si le quartier manque
+      zoneName = a.suburb || a.neighbourhood || a.residential || a.commercial || a.industrial || a.road || a.town || a.village || "Gabès";
+      
+      // Si c'est juste une route, on essaie d'ajouter la ville pour plus de contexte
+      if (a.road && !a.suburb && !a.neighbourhood) {
+        zoneName = a.road + ", Gabès";
+      }
+      
+      document.getElementById('loc-lbl').textContent = zoneName;
+    }
+  } catch(e) { console.error(e); }
+}
+
+function setLocState(s, m) {
+  document.getElementById('loc-dot').className = 'loc-dot ' + s;
+  document.getElementById('loc-lbl').textContent = m;
+}
+
+function selType(el) { document.querySelectorAll('.type-btn').forEach(b=>b.classList.remove('sel')); el.classList.add('sel'); selType_ = el.dataset.type; }
+function selGrav(el) { document.querySelectorAll('.grav-btn').forEach(b=>b.classList.remove('sel')); el.classList.add('sel'); selGrav_ = el.dataset.g; }
+
+async function soumettre() {
+  const texte = document.getElementById('texte').value.trim();
+  if (!texte) return;
+  
+  document.getElementById('form-section').style.display = 'none';
+  document.getElementById('loading-section').style.display = 'block';
+
+  // Simulation steps
+  for(let i=0; i<4; i++) {
+    document.getElementById('step-'+i).className = 'step active';
+    await new Promise(r=>setTimeout(r, 600));
+    document.getElementById('step-'+i).className = 'step done';
+  }
+
+  const res = await fetch('/api/signaler', {
+    method:'POST', headers:{'Content-Type':'application/json'},
+    body: JSON.stringify({ texte, type:selType_, gravite:selGrav_, lat:userLat, lng:userLng, zone:zoneName })
+  });
+  const data = await res.json();
+
+  document.getElementById('loading-section').style.display = 'none';
+  document.getElementById('response-section').style.display = 'block';
+  showResult(data);
+  loadSigs();
+}
+
+function showResult(d) {
+  document.getElementById('resp-body').textContent = d.reponse;
+  document.getElementById('ai-type').textContent = d.type_env;
+  document.getElementById('ai-grav').textContent = d.gravite + '/5';
+  document.getElementById('ai-zone').textContent = d.zone || "Gabès";
+  document.getElementById('ai-cluster').textContent = d.cluster_id ? "Zone de vigilance #" + d.cluster_id : "Nouveau";
+}
+
+async function loadSigs() {
+  const res = await fetch('/api/signalements');
+  const sigs = await res.json();
+  document.getElementById('sig-list').innerHTML = sigs.slice(0,5).map(s => `
+    <div class="sig-card">
+      <div class="sig-card-top">
+        <span class="sig-type-badge">${s.type_env}</span>
+        <span class="sig-time">${s.timestamp.slice(11,16)}</span>
+      </div>
+      <div class="sig-text">${s.texte}</div>
+    </div>
+
+  `).join('');
+}
+
+function nouveau() { location.reload(); }
+
+window.onload = () => { initMap(33.88, 9.99); loadSigs(); };
+</script>
+</body>
+</html>

@@ -14,16 +14,16 @@
   --blue:  #00cfff;
   --gold:  #c9a84c;
   --gold2: #ffcc44;
-  --bg:    #050d12;
-  --panel: #080f16;
-  --border:rgba(0,255,136,0.15);
+  --bg:    #121c26;
+  --panel: #1d2a38;
+  --border:rgba(0,255,136,0.3);
 }
 *, *::before, *::after { margin:0; padding:0; box-sizing:border-box; }
 html { scroll-behavior: smooth; }
 
 body {
   background: var(--bg);
-  color: #c8f0d8;
+  color: #ffffff;
   font-family: 'Exo 2', sans-serif;
   min-height: 100vh;
   overflow-x: hidden;
@@ -272,6 +272,7 @@ footer {
   <nav class="nav-links">
     <a href="/" class="nav-btn"><span class="pulse-dot" style="width:5px;height:5px;margin-right:5px"></span>Accueil</a>
     <a href="/dashboard" class="nav-btn">Surveillance</a>
+    <a href="/reclamation/dashboard" class="nav-btn">Signaler</a>
     <a href="/culture" class="nav-btn">Culture</a>
     <a href="/culture/carbone" class="nav-btn">Carbone</a>
   </nav>
@@ -371,6 +372,21 @@ footer {
         <div class="mc-feature">Crédits carbone Carbonmark · Gold Standard</div>
       </div>
       <span class="mc-cta">ANALYSER MA PARCELLE <span class="mc-cta-arrow">→</span></span>
+    </a>
+
+    <!-- MODULE 3 : Gabès Voix -->
+    <a href="/reclamation" class="module-card" style="grid-column: span 2;">
+      <span class="mc-badge badge-live">SIGNALEMENT</span>
+      <div class="mc-tag">Plateforme Citoyenne</div>
+      <div class="mc-title">Gabès Voix</div>
+      <p class="mc-desc">Signalez les incidents environnementaux dans votre quartier. Notre IA regroupe les rapports similaires pour alerter les autorités en temps réel.</p>
+      <div class="mc-features">
+        <div class="mc-feature">Analyse sémantique Gemini 2.0 Flash</div>
+        <div class="mc-feature">Clustering géo-temporel automatique</div>
+        <div class="mc-feature">Génération d'alertes intelligentes</div>
+        <div class="mc-feature">Tableau de bord de vigilance citoyenne</div>
+      </div>
+      <span class="mc-cta">SIGNALER UN INCIDENT <span class="mc-cta-arrow">→</span></span>
     </a>
 
   </div>

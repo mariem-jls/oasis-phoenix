@@ -1,0 +1,499 @@
+<!DOCTYPE html>
+<html lang="fr">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Oasis Phoenix — Dashboard</title>
+<link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css"/>
+<link href="https://fonts.googleapis.com/css2?family=Share+Tech+Mono&family=Exo+2:wght@400;500;600&family=Cinzel:wght@400;700;900&family=Sora:wght@400;500;600&display=swap" rel="stylesheet">
+<style>
+* { box-sizing: border-box; margin: 0; padding: 0; }
+:root {
+  --green:#00ff88; --yellow:#ffcc00; --red:#ff3355;
+  --blue:#00cfff;  --bg:#121c26;    --panel:#1d2a38;
+  --orange:#D85A30;
+  --border:rgba(0,255,136,0.3);
+  --muted:rgba(220,255,240,0.8);
+}
+
+.fab {
+  position: absolute; bottom: 30px; right: 30px; z-index: 1000;
+  width: 56px; height: 56px; border-radius: 50%;
+  background: var(--green); color: #050d12;
+  display: flex; align-items: center; justify-content: center;
+  font-size: 24px; text-decoration: none; font-weight: 800;
+  box-shadow: 0 4px 20px rgba(0,255,136,0.4);
+  transition: all 0.3s cubic-bezier(0.175, 0.885, 0.32, 1.275);
+}
+.fab:hover { transform: scale(1.1) translateY(-5px); box-shadow: 0 8px 30px rgba(0,255,136,0.6); background: #00ffaa; }
+.fab::after {
+  content: 'NOUVEAU SIGNALEMENT'; position: absolute; right: 70px;
+  background: rgba(0,255,136,0.1); backdrop-filter: blur(5px);
+  color: var(--green); padding: 6px 12px; border-radius: 4px;
+  font-size: 10px; font-family: 'Share Tech Mono';
+  border: 1px solid var(--border); opacity: 0; pointer-events: none;
+  transition: all 0.3s; white-space: nowrap;
+}
+.fab:hover::after { opacity: 1; right: 80px; }
+
+html,body { height:100%; font-family:'Sora',sans-serif; background:var(--bg); color:#fff; font-size:14px; overflow:hidden; }
+.layout { display:grid; grid-template-rows:52px 1fr; height:100vh; }
+
+/* ── HEADER ── */
+#header {
+  position: sticky; top:0; z-index:100;
+  display: flex; align-items:center; justify-content:space-between;
+  padding: 10px 28px;
+  background: rgba(5,13,18,0.97);
+  border-bottom: 1px solid var(--border);
+  backdrop-filter: blur(8px);
+}
+.logo-wrap { display:flex; align-items:center; gap:14px; text-decoration:none; }
+.logo-svg { width:38px; height:38px; }
+.logo-text { font-family:'Cinzel',serif; font-size:.9rem; font-weight:700; letter-spacing:.2em; color:var(--green); text-shadow:0 0 20px rgba(0,255,136,0.5); }
+.logo-sub-text { font-family:'Share Tech Mono',monospace; font-size:.5rem; letter-spacing:.3em; color:rgba(0,255,136,0.4); display:block; margin-top:2px; }
+
+.pulse-dot { width:8px; height:8px; border-radius:50%; background:var(--green); display:inline-block; margin-right:8px; animation:pulse 1.5s infinite; }
+@keyframes pulse { 0%,100%{box-shadow:0 0 0 0 rgba(0,255,136,0.7)} 50%{box-shadow:0 0 0 6px rgba(0,255,136,0)} }
+
+.nav-links { display:flex; gap:8px; align-items: center; }
+.nav-btn {
+  font-family:'Share Tech Mono',monospace; font-size:.62rem; letter-spacing:.15em;
+  padding:7px 16px; border-radius:999px; cursor:pointer; text-decoration:none;
+  border:1px solid var(--border); background:rgba(0,255,136,0.06); color:#d2ffe6;
+  transition:all .25s;
+}
+.nav-btn:hover { background:rgba(0,255,136,0.15); border-color:rgba(0,255,136,0.4); }
+.nav-btn.active { border-color: var(--green); background: rgba(0,255,136,0.1); }
+
+
+.main { display:grid; grid-template-columns:360px 1fr; overflow:hidden; }
+
+/* Sidebar */
+.sidebar { background:var(--panel); border-right:1px solid var(--border); display:flex; flex-direction:column; overflow:hidden; }
+.sec { padding:16px; border-bottom:1px solid var(--border); flex-shrink:0; }
+.sec-label { font-family:'Share Tech Mono', monospace; font-size:10px; color:var(--green); text-transform:uppercase; letter-spacing:2px; margin-bottom:12px; }
+
+/* Stats */
+.stats-grid { display:grid; grid-template-columns:repeat(3,1fr); gap:8px; }
+.stat { background:rgba(0,255,136,0.03); border:1px solid rgba(0,255,136,0.08); border-radius:6px; padding:10px 8px; }
+.stat-val { font-family:'Share Tech Mono', monospace; font-size:1.4rem; font-weight:600; line-height:1; margin-bottom:4px; text-shadow: 0 0 10px rgba(0,255,136,0.2); }
+.stat-lbl { font-size:9px; color:var(--muted); text-transform: uppercase; letter-spacing: 0.5px; }
+
+/* Tabs */
+.tabs { display:flex; padding:0 10px; border-bottom:1px solid var(--border); flex-shrink:0; background: rgba(0,255,136,0.02); }
+.tab { padding:14px 12px; font-family:'Share Tech Mono', monospace; font-size:10px; letter-spacing: 1px; color:var(--muted); cursor:pointer; border-bottom:2px solid transparent; transition:all .2s; white-space:nowrap; text-transform: uppercase; }
+.tab.active { color:var(--green); border-bottom-color:var(--green); }
+.tab:hover:not(.active) { color:#fff; background: rgba(0,255,136,0.05); }
+
+/* Tab panels */
+.tab-panels { flex:1; overflow:hidden; position:relative; }
+.tab-panel { position:absolute; inset:0; overflow-y:auto; display:none; }
+.tab-panel.active { display:block; }
+
+/* Signalement item */
+.sig-item { padding:14px 16px; border-bottom:1px solid var(--border); cursor:pointer; transition:all .2s; }
+.sig-item:hover { background:rgba(0,255,136,0.04); }
+.sig-item.critical { border-left:3px solid var(--red); background: rgba(255,51,85,0.03); }
+.sig-item.clustered { border-left:3px solid var(--yellow); background: rgba(255,204,0,0.03); }
+.sig-top { display:flex; justify-content:space-between; align-items:flex-start; margin-bottom:6px; }
+.sig-type { font-family:'Share Tech Mono', monospace; font-size:9px; font-weight:600; padding:2px 8px; border-radius:4px; }
+.sig-time { font-family:'Share Tech Mono', monospace; font-size:9px; color:rgba(0,255,136,0.6); }
+.sig-text { font-size:12px; color:rgba(220,255,240,0.9); line-height:1.5; overflow:hidden; display:-webkit-box; -webkit-line-clamp:2; -webkit-box-orient:vertical; }
+.sig-bottom { display:flex; align-items:center; gap:8px; margin-top:8px; }
+.grav-dots { display:flex; gap:3px; }
+.gd { width:5px; height:5px; border-radius:50%; background:rgba(255,255,255,.05); }
+.gd.on { background:var(--yellow); box-shadow: 0 0 5px var(--yellow); }
+.gd.crit { background:var(--red); box-shadow: 0 0 5px var(--red); }
+.cluster-badge { font-family:'Share Tech Mono', monospace; font-size:9px; color:var(--yellow); }
+
+/* Cluster item */
+.cl-item { padding:16px; border-bottom:1px solid var(--border); cursor:pointer; transition:all .2s; }
+.cl-item:hover { background:rgba(0,255,136,0.04); }
+.cl-header { display:flex; justify-content:space-between; align-items:center; margin-bottom:8px; }
+.cl-count { font-family:'Share Tech Mono', monospace; font-size:1.6rem; font-weight:600; line-height:1; }
+.cl-type { font-family:'Share Tech Mono', monospace; font-size:9px; padding:2px 8px; border-radius:4px; }
+.cl-zone { font-family:'Cinzel',serif; font-size:12px; font-weight:700; margin-bottom:6px; color: var(--green); }
+.cl-resume { font-size:11px; color:rgba(220,255,240,0.85); line-height:1.5; margin-bottom: 8px; }
+.cl-score { font-family:'Share Tech Mono', monospace; font-size:9px; color:rgba(0,255,136,0.6); }
+.alert-badge {
+  font-family:'Share Tech Mono', monospace; font-size:9px; font-weight:600; padding:2px 10px; border-radius:4px;
+  text-transform: uppercase;
+}
+.ab-INFO     { background:rgba(0,207,255,.2);   color:var(--blue); border: 1px solid rgba(0,207,255,0.3); }
+.ab-ATTENTION{ background:rgba(255,204,0,.2);   color:var(--yellow); border: 1px solid rgba(255,204,0,0.3); }
+.ab-URGENT   { background:rgba(255,51,85,.15);  color:var(--red); border: 1px solid rgba(255,51,85,0.3); }
+.ab-CRITIQUE { background:rgba(255,51,85,.3);   color:var(--red); border: 1px solid var(--red); box-shadow: 0 0 10px rgba(255,51,85,0.2); }
+
+/* Alerte item */
+.al-item { padding:16px; border-bottom:1px solid var(--border); transition: all 0.2s; }
+.al-item:hover { background: rgba(255,51,85,0.02); }
+.al-top { display:flex; justify-content:space-between; align-items:flex-start; margin-bottom:8px; }
+.al-titre { font-family:'Cinzel',serif; font-size:13px; font-weight:700; line-height:1.4; color: #fff; }
+.al-msg { font-size:11px; color:rgba(220,255,240,0.85); line-height:1.5; margin-top:6px; }
+.al-footer { display:flex; align-items:center; gap:12px; margin-top:10px; font-family:'Share Tech Mono', monospace; font-size:9px; color:rgba(0,255,136,0.6); }
+
+/* Map */
+#map { width:100%; height:100%; background: #050d12; }
+.leaflet-popup-content-wrapper { background:var(--panel); border:1px solid var(--border); border-radius:8px; box-shadow:0 8px 32px rgba(0,0,0,.8); backdrop-filter: blur(10px); }
+.leaflet-popup-tip { background:var(--panel); }
+.leaflet-popup-content { color:#c8f0d8; font-family:'Exo 2',sans-serif; font-size:12px; margin:12px; min-width:240px; }
+.pp-badge { font-family:'Share Tech Mono', monospace; font-size:9px; padding:2px 10px; border-radius:4px; display:inline-block; margin-bottom:10px; }
+.pp-row { display:flex; justify-content:space-between; font-size:11px; padding:4px 0; border-bottom:1px solid rgba(255,255,255,.04); }
+.pp-row:last-child { border-bottom:none; }
+.pp-key { color:rgba(0,255,136,0.7); font-family:'Share Tech Mono', monospace; }
+.pp-ia { margin-top:10px; padding:10px; background:rgba(0,255,136,0.05); border-radius:6px; font-size:11px; line-height:1.5; color:var(--green); border-left: 2px solid var(--green); }
+.pp-cluster { margin-top:10px; padding:10px; background:rgba(255,204,0,0.05); border-radius:6px; font-size:11px; line-height:1.5; color:var(--yellow); border-left: 2px solid var(--yellow); }
+
+::-webkit-scrollbar { width:4px; }
+::-webkit-scrollbar-track { background: var(--bg); }
+::-webkit-scrollbar-thumb { background: var(--border); border-radius:2px; }
+::-webkit-scrollbar-thumb:hover { background: rgba(0,255,136,0.3); }
+
+.empty { padding:32px; text-align:center; color:var(--muted); font-size:12px; font-family:'Share Tech Mono', monospace; }
+</style>
+</head>
+<body>
+<div class="layout">
+  <header id="header">
+  <a href="/" class="logo-wrap">
+    <svg class="logo-svg" viewBox="0 0 300 280" xmlns="http://www.w3.org/2000/svg">
+      <defs>
+        <linearGradient id="lg1" x1="0%" y1="0%" x2="100%" y2="100%">
+          <stop offset="0%" stop-color="#ccff44"/><stop offset="100%" stop-color="#006622"/>
+        </linearGradient>
+      </defs>
+      <path d="M150,155 Q100,120 30,90 Q70,125 115,148 Z"  fill="url(#lg1)" opacity=".95"/>
+      <path d="M150,155 Q200,120 270,90 Q230,125 185,148 Z" fill="url(#lg1)" opacity=".95"/>
+      <path d="M150,155 Q95,135 25,128 Q68,155 118,158 Z"  fill="#44cc22" opacity=".85"/>
+      <path d="M150,155 Q205,135 275,128 Q232,155 182,158 Z" fill="#44cc22" opacity=".85"/>
+      <path d="M148,195 Q138,235 125,272 Q142,248 152,205 Z" fill="#33aa11"/>
+      <path d="M152,195 Q162,235 175,272 Q158,248 148,205 Z" fill="#33aa11"/>
+      <ellipse cx="150" cy="148" rx="18" ry="30" fill="#66dd22"/>
+      <ellipse cx="150" cy="82"  rx="16" ry="16" fill="#77ee33"/>
+      <path d="M150,66 Q147,50 150,38 Q153,50 150,66Z" fill="#ffcc44"/>
+      <path d="M143,68 Q137,53 139,41 Q144,56 145,69Z" fill="#ffcc44" opacity=".75"/>
+      <path d="M157,68 Q163,53 161,41 Q156,56 155,69Z" fill="#ffcc44" opacity=".75"/>
+    </svg>
+    <div>
+      <span class="logo-text">OASIS PHOENIX</span>
+      <span class="logo-sub-text">AI HEALING GABÈS</span>
+    </div>
+  </a>
+
+  <div style="margin-left: auto; margin-right: 20px; display: flex; align-items: center; gap: 15px;">
+     <div style="font-size:11px; color:var(--green); background:rgba(29,158,117,.12);
+      border:1px solid rgba(29,158,117,.3); padding:3px 10px; border-radius:20px;
+      display:flex; align-items:center; gap:5px; font-family:'Share Tech Mono';">
+      <div class="pulse-dot" style="width:6px; height:6px; margin:0"></div>Rafraîchissement 30s
+    </div>
+  </div>
+
+  <nav class="nav-links">
+    <a href="/" class="nav-btn">Accueil</a>
+    <a href="/dashboard" class="nav-btn">Surveillance</a>
+    <a href="/reclamation/dashboard" class="nav-btn active"><span class="pulse-dot" style="width:5px;height:5px;margin-right:5px"></span>Signaler</a>
+    <a href="/culture" class="nav-btn">Culture</a>
+    <a href="/culture/carbone" class="nav-btn">Carbone</a>
+  </nav>
+</header>
+
+
+  <div class="main">
+    <div class="sidebar">
+
+      <!-- Stats -->
+      <div class="sec">
+        <div style="display:flex; justify-content:space-between; align-items:center; margin-bottom:12px;">
+          <div class="sec-label" style="margin-bottom:0;">Tableau de bord</div>
+          <a href="/reclamation" class="nav-btn" style="text-decoration:none; padding:4px 10px; font-size:10px;">+ Signalement</a>
+        </div>
+        <div class="stats-grid">
+          <div class="stat"><div class="stat-val" id="s-total"    style="color:var(--blue)">—</div><div class="stat-lbl">Signalements</div></div>
+          <div class="stat"><div class="stat-val" id="s-clusters" style="color:var(--yellow)">—</div><div class="stat-lbl">Zones d'impact</div></div>
+          <div class="stat"><div class="stat-val" id="s-alertes"  style="color:var(--red)">—</div><div class="stat-lbl">Alertes</div></div>
+          <div class="stat"><div class="stat-val" id="s-24h"      style="color:var(--green)">—</div><div class="stat-lbl">Dernières 24h</div></div>
+          <div class="stat"><div class="stat-val" id="s-crit"     style="color:var(--red)">—</div><div class="stat-lbl">Critiques</div></div>
+          <div class="stat"><div class="stat-val" id="s-types"    style="color:var(--muted)">—</div><div class="stat-lbl">Types</div></div>
+        </div>
+      </div>
+
+      <!-- Tabs -->
+      <div class="tabs">
+        <div class="tab active" onclick="switchTab('sigs',this)">Signalements</div>
+        <div class="tab"        onclick="switchTab('clusters',this)">Zones de vigilance</div>
+        <div class="tab"        onclick="switchTab('alertes',this)">
+          <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round" style="vertical-align:middle; margin-right:4px;"><path d="M18 8A6 6 0 0 0 6 8c0 7-3 9-3 9h18s-3-2-3-9"/><path d="M13.73 21a2 2 0 0 1-3.46 0"/></svg>Alertes
+        </div>
+      </div>
+
+      <div class="tab-panels">
+
+        <!-- Signalements -->
+        <div class="tab-panel active" id="tab-sigs">
+          <div id="list-sigs"><div class="empty">Chargement...</div></div>
+        </div>
+
+        <!-- Zones de vigilance -->
+        <div class="tab-panel" id="tab-clusters">
+          <div id="list-clusters"><div class="empty">Chargement...</div></div>
+        </div>
+
+        <!-- Alertes -->
+        <div class="tab-panel" id="tab-alertes">
+          <div id="list-alertes"><div class="empty">Aucune alerte pour le moment.</div></div>
+        </div>
+
+      </div>
+    </div>
+
+    <div id="map">
+       <a href="/reclamation" class="fab">+</a>
+    </div>
+  </div>
+</div>
+
+<script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js"></script>
+<script>
+const TYPE_META = {
+  pollution_air: { label:'Air',        color:'#00cfff', bg:'rgba(0,207,255,.2)',  path:'M17.7 7.7a2.5 2.5 0 1 1 1.8 4.3H2 M9.6 4.6A2 2 0 1 1 11 8H2 M12.6 19.4A2 2 0 1 0 14 16H2' },
+  pollution_sol: { label:'Sol',        color:'#ccff44', bg:'rgba(204,255,68,.15)', path:'M7 20h10 M10 20c5.5 0 5.5-10 5.5-10 M14 20c-5.5 0-5.5-10-5.5-10 M12 20V9' },
+  pollution_eau: { label:'Eau',        color:'#00ff88', bg:'rgba(0,255,136,.15)',  path:'M12 2.69l5.66 5.66a8 8 0 1 1-11.31 0z' },
+  vegetation:    { label:'Plantes',    color:'#44cc22', bg:'rgba(68,204,34,.15)',  path:'M11 20A7 7 0 0 1 9.8 6.1C15.5 5 17 4.48 19 2c1 2 2 3.5 1 9.2a7 7 0 0 1-9 8.8zm0 0v-2' },
+  sante:         { label:'Santé',      color:'#ff3355', bg:'rgba(255,51,85,.15)',  path:'M16 4h4a2 2 0 0 1 2 2v14a2 2 0 0 1-2 2H4a2 2 0 0 1-2-2V6a2 2 0 0 1 2-2h4 M8 2v4 M16 2v4 M3 10h18 M12 14v4 M10 16h4' },
+  autre:         { label:'Autre',      color:'#8b949e', bg:'rgba(139,148,158,.2)', path:'M20 10c0 6-8 12-8 12s-8-6-8-12a8 8 0 0 1 16 0z M12 10a3 3 0 1 0 0-6 3 3 0 0 0 0 6z' },
+};
+
+function getIconSvg(type, color, size=14) {
+  const m = TYPE_META[type] || TYPE_META.autre;
+  return `<svg width="${size}" height="${size}" viewBox="0 0 24 24" fill="none" stroke="${color || 'currentColor'}" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" style="display:inline-block; vertical-align:middle; margin-right:4px;"><path d="${m.path}"/></svg>`;
+}
+
+const NIVEAU_COLOR = { INFO:'#00cfff', ATTENTION:'#ffcc00', URGENT:'#ff6633', CRITIQUE:'#ff3355' };
+
+
+const map = L.map('map', { center:[33.88,9.99], zoom:11 });
+L.tileLayer('https://server.arcgisonline.com/ArcGIS/rest/services/World_Imagery/MapServer/tile/{z}/{y}/{x}').addTo(map);
+L.tileLayer('https://{s}.basemaps.cartocdn.com/light_only_labels/{z}/{x}/{y}{r}.png', {
+  subdomains: 'abcd',
+  pane: 'shadowPane'
+}).addTo(map);
+
+let allSigs=[], allClusters=[], allAlertes=[];
+let sigMarkers=[], clusterMarkers=[];
+
+function switchTab(name, el) {
+  document.querySelectorAll('.tab').forEach(t=>t.classList.remove('active'));
+  document.querySelectorAll('.tab-panel').forEach(p=>p.classList.remove('active'));
+  el.classList.add('active');
+  document.getElementById('tab-'+name).classList.add('active');
+  // Refresh map layers
+  if (name==='clusters') showClusterMarkers();
+  else showSigMarkers();
+}
+
+// ── Markers signalements ─────────────────────────────────────────────────────
+function makeIcon(color, size=24) {
+  const svg=`<svg xmlns="http://www.w3.org/2000/svg" width="${size}" height="${size+6}" viewBox="0 0 ${size} ${size+6}">
+    <circle cx="${size/2}" cy="${size/2}" r="${size/2-2}" fill="${color}" fill-opacity=".25" stroke="${color}" stroke-width="1.5"/>
+    <circle cx="${size/2}" cy="${size/2}" r="${size/4}" fill="${color}"/>
+    <line x1="${size/2}" y1="${size-2}" x2="${size/2}" y2="${size+4}" stroke="${color}" stroke-width="1.5" stroke-linecap="round"/>
+  </svg>`;
+  return L.divIcon({html:svg, iconSize:[size,size+6], iconAnchor:[size/2,size+6], className:''});
+}
+
+function makeClusterIcon(nb, color) {
+  const svg=`<svg xmlns="http://www.w3.org/2000/svg" width="44" height="50" viewBox="0 0 44 50">
+    <circle cx="22" cy="22" r="20" fill="${color}" fill-opacity=".15" stroke="${color}" stroke-width="2"/>
+    <circle cx="22" cy="22" r="14" fill="${color}" fill-opacity=".25"/>
+    <text x="22" y="27" text-anchor="middle" fill="white" font-size="14" font-weight="800" font-family="Share Tech Mono">${nb}</text>
+
+    <line x1="22" y1="42" x2="22" y2="48" stroke="${color}" stroke-width="2" stroke-linecap="round"/>
+  </svg>`;
+  return L.divIcon({html:svg, iconSize:[44,50], iconAnchor:[22,50], className:''});
+}
+
+function showSigMarkers() {
+  clusterMarkers.forEach(m=>map.removeLayer(m)); clusterMarkers=[];
+  sigMarkers.forEach(m=>map.removeLayer(m)); sigMarkers=[];
+  allSigs.forEach((r,i) => {
+    const m = TYPE_META[r.type_env] || TYPE_META.autre;
+    const col = r.gravite>=4 ? '#E24B4A' : r.gravite>=3 ? '#BA7517' : '#1D9E75';
+    const lat = r.lat || (33.88+(Math.random()-.5)*.18);
+    const lng = r.lng || (9.99 +(Math.random()-.5)*.22);
+    const mk = L.marker([lat,lng], {icon:makeIcon(col)})
+      .bindPopup(buildSigPopup(r), {maxWidth:270})
+      .addTo(map);
+    sigMarkers.push(mk);
+  });
+}
+
+function showClusterMarkers() {
+  sigMarkers.forEach(m=>map.removeLayer(m)); sigMarkers=[];
+  clusterMarkers.forEach(m=>map.removeLayer(m)); clusterMarkers=[];
+  allClusters.forEach(c => {
+    const m = TYPE_META[c.type_env] || TYPE_META.autre;
+    const col = NIVEAU_COLOR[c.niveau_alerte] || m.color;
+    const lat = c.lat_centre || 33.88;
+    const lng = c.lng_centre || 9.99;
+    const mk = L.marker([lat,lng], {icon:makeClusterIcon(c.nb_signalements, col)})
+      .bindPopup(buildClusterPopup(c), {maxWidth:280})
+      .addTo(map);
+    // Zone circle
+    const circle = L.circle([lat,lng], {
+      radius: 2000, color: col, fillColor: col,
+      fillOpacity: 0.08, weight: 1.5, dashArray:'5,5'
+    }).addTo(map);
+    clusterMarkers.push(mk, circle);
+  });
+}
+
+function buildSigPopup(r) {
+  const m = TYPE_META[r.type_env] || TYPE_META.autre;
+  const isAr = r.langue==='ar';
+  return `<div>
+    <span class="pp-badge" style="background:${m.bg};color:${m.color};">${getIconSvg(r.type_env, m.color)}${m.label}</span>
+
+    <div class="pp-row"><span class="pp-key">Gravité</span><span>${'●'.repeat(r.gravite||1)}${'○'.repeat(5-(r.gravite||1))}</span></div>
+    <div class="pp-row"><span class="pp-key">Zone</span><span>${r.zone||'Non précisée'}</span></div>
+    <div class="pp-row"><span class="pp-key">Date</span><span style="font-family:'IBM Plex Mono';font-size:10px;">${(r.timestamp||'').slice(0,16)}</span></div>
+    ${r.cluster_id ? `<div class="pp-row"><span class="pp-key">Impact</span><span style="color:var(--amber);">#${r.cluster_id}</span></div>` : ''}
+    ${r.reponse_ia ? `<div class="pp-ia${isAr?' ar':''}">${r.reponse_ia}</div>` : ''}
+  </div>`;
+}
+
+function buildClusterPopup(c) {
+  const m = TYPE_META[c.type_env] || TYPE_META.autre;
+  const niveau = c.niveau_alerte || 'INFO';
+  const score = c.score_confiance ? (c.score_confiance*100).toFixed(0)+'%' : '—';
+  return `<div>
+    <div style="display:flex;gap:6px;align-items:center;margin-bottom:8px;">
+      <span class="pp-badge" style="background:${m.bg};color:${m.color};">${getIconSvg(c.type_env, m.color)}${m.label}</span>
+
+      <span class="alert-badge ab-${niveau}">${niveau}</span>
+    </div>
+    <div class="pp-row"><span class="pp-key">Signalements</span><span style="font-weight:600;">${c.nb_signalements}</span></div>
+    <div class="pp-row"><span class="pp-key">Zone</span><span>${c.zone||'—'}</span></div>
+    <div class="pp-row"><span class="pp-key">Score confiance</span><span style="color:${NIVEAU_COLOR[niveau]||'#888'};">${score}</span></div>
+    <div class="pp-row"><span class="pp-key">Gravité max</span><span>${'●'.repeat(c.gravite_max||1)}</span></div>
+    ${c.resume_ia ? `<div class="pp-cluster">${c.resume_ia}</div>` : ''}
+  </div>`;
+}
+
+// ── Render lists ──────────────────────────────────────────────────────────────
+function renderSigs(data) {
+  const el = document.getElementById('list-sigs');
+  if (!data.length) { el.innerHTML='<div class="empty">Aucun signalement</div>'; return; }
+  el.innerHTML = data.map((r,i) => {
+    const m = TYPE_META[r.type_env]||TYPE_META.autre;
+    const isCrit = (r.gravite||0)>=4;
+    const dots = Array.from({length:5},(_,j)=>`<div class="gd${j<(r.gravite||0)?' on'+(isCrit?' crit':''):''}"></div>`).join('');
+    return `<div class="sig-item${isCrit?' critical':r.cluster_id?' clustered':''}" onclick="focusSig(${i})">
+      <div class="sig-top">
+        <span class="sig-type" style="background:${m.bg};color:${m.color};">${getIconSvg(r.type_env, m.color, 12)}${m.label}</span>
+
+        <span class="sig-time">${(r.timestamp||'').slice(0,16)}</span>
+      </div>
+      <div class="sig-text">${r.texte}</div>
+      <div class="sig-bottom">
+        <div class="grav-dots">${dots}</div>
+        ${r.cluster_id ? `<span class="cluster-badge">Vigilance #${r.cluster_id}</span>` : ''}
+      </div>
+    </div>`;
+  }).join('');
+}
+
+function renderClusters(data) {
+  const el = document.getElementById('list-clusters');
+  if (!data.length) { el.innerHTML='<div class="empty">Aucun cluster actif</div>'; return; }
+  el.innerHTML = data.map((c,i) => {
+    const m = TYPE_META[c.type_env]||TYPE_META.autre;
+    const niveau = c.niveau_alerte||'INFO';
+    const score = c.score_confiance ? (c.score_confiance*100).toFixed(0)+'%' : '—';
+    return `<div class="cl-item" onclick="focusCluster(${i})">
+      <div class="cl-header">
+        <div style="display:flex;align-items:baseline;gap:8px;">
+          <div class="cl-count" style="color:${NIVEAU_COLOR[niveau]||m.color};">${c.nb_signalements}</div>
+          <span class="cl-type" style="background:${m.bg};color:${m.color};">${getIconSvg(c.type_env, m.color, 11)}${m.label}</span>
+
+        </div>
+        <div style="display:flex;flex-direction:column;align-items:flex-end;gap:4px;">
+          ${c.alerte_generee ? `<span class="alert-badge ab-${niveau}">${niveau}</span>` : ''}
+          <span class="cl-score" style="color:var(--muted);">confiance ${score}</span>
+        </div>
+      </div>
+      <div class="cl-zone">${c.zone||'Zone inconnue'}</div>
+      ${c.resume_ia ? `<div class="cl-resume">${c.resume_ia}</div>` : ''}
+    </div>`;
+  }).join('');
+}
+
+function renderAlertes(data) {
+  const el = document.getElementById('list-alertes');
+  if (!data.length) { el.innerHTML='<div class="empty">Aucune alerte générée.</div>'; return; }
+  el.innerHTML = data.map(a => {
+    const col = NIVEAU_COLOR[a.niveau]||'#888';
+    return `<div class="al-item" style="border-left:3px solid ${col};">
+      <div class="al-top">
+        <span class="alert-badge ab-${a.niveau}">${a.niveau}</span>
+        <span style="font-size:10px;color:var(--muted);font-family:'IBM Plex Mono';">${(a.timestamp||'').slice(0,16)}</span>
+      </div>
+      <div class="al-titre">${a.titre||'—'}</div>
+      <div class="al-msg">${a.message||''}</div>
+      <div class="al-footer">
+        <span>📍 ${a.zone||'—'}</span>
+        <span>👥 ${a.nb_citoyens} citoyen${a.nb_citoyens>1?'s':''}</span>
+        <span>Vigilance #${a.cluster_id}</span>
+      </div>
+    </div>`;
+  }).join('');
+}
+
+function focusSig(i) {
+  const r = allSigs[i];
+  const lat = r.lat||33.88, lng = r.lng||9.99;
+  map.setView([lat,lng],14,{animate:true});
+  sigMarkers[i]?.openPopup();
+}
+function focusCluster(i) {
+  const c = allClusters[i];
+  map.setView([c.lat_centre||33.88, c.lng_centre||9.99], 13, {animate:true});
+  clusterMarkers[i*2]?.openPopup();
+}
+
+async function loadAll() {
+  try {
+    const [sigs, clusters, alertes, stats] = await Promise.all([
+      fetch('/api/signalements').then(r=>r.json()),
+      fetch('/api/clusters').then(r=>r.json()),
+      fetch('/api/alertes').then(r=>r.json()),
+      fetch('/api/stats_signalements').then(r=>r.json()),
+    ]);
+
+    allSigs=sigs; allClusters=clusters; allAlertes=alertes;
+
+    document.getElementById('s-total').textContent    = stats.total;
+    document.getElementById('s-clusters').textContent = stats.clusters_actifs;
+    document.getElementById('s-alertes').textContent  = stats.alertes_total;
+    document.getElementById('s-24h').textContent      = stats.recent_24h;
+    document.getElementById('s-crit').textContent     = stats.critiques;
+    document.getElementById('s-types').textContent    = Object.keys(stats.par_type).length;
+
+    // Update tab badge
+    if (alertes.length) {
+      document.querySelector('[onclick*="alertes"]').textContent = `🚨 Alertes (${alertes.length})`;
+    }
+
+    renderSigs(sigs);
+    renderClusters(clusters);
+    renderAlertes(alertes);
+    showSigMarkers();
+
+  } catch(e) { console.error(e); }
+}
+
+loadAll();
+setInterval(loadAll, 30000);
+</script>
+</body>
+</html>

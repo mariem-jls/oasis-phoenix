@@ -1,0 +1,209 @@
+{
+  "type": "FeatureCollection",
+  "features": [
+    {
+      "type": "Feature",
+      "properties": {
+        "name": "Ghannouch",
+        "baseRisk": 92,
+        "description": "Zone industrielle GCT — source principale SO2 et phosphogypse"
+      },
+      "geometry": {
+        "type": "Polygon",
+        "coordinates": [[
+          [10.02, 33.92], [10.05, 33.91], [10.08, 33.92], [10.10, 33.94],
+          [10.09, 33.97], [10.06, 33.98], [10.03, 33.97], [10.01, 33.95],
+          [10.02, 33.92]
+        ]]
+      }
+    },
+    {
+      "type": "Feature",
+      "properties": {
+        "name": "Gabes Medina",
+        "baseRisk": 65,
+        "description": "Centre ville historique — exposition directe aux émissions industrielles"
+      },
+      "geometry": {
+        "type": "Polygon",
+        "coordinates": [[
+          [10.08, 33.87], [10.11, 33.87], [10.13, 33.89], [10.12, 33.91],
+          [10.09, 33.92], [10.07, 33.91], [10.06, 33.89], [10.08, 33.87]
+        ]]
+      }
+    },
+    {
+      "type": "Feature",
+      "properties": {
+        "name": "Gabes Ouest",
+        "baseRisk": 78,
+        "description": "Proximité immédiate de la zone industrielle GCT"
+      },
+      "geometry": {
+        "type": "Polygon",
+        "coordinates": [[
+          [10.01, 33.88], [10.05, 33.88], [10.07, 33.90], [10.06, 33.92],
+          [10.02, 33.92], [10.00, 33.91], [9.99, 33.89], [10.01, 33.88]
+        ]]
+      }
+    },
+    {
+      "type": "Feature",
+      "properties": {
+        "name": "Gabes Sud",
+        "baseRisk": 42,
+        "description": "Zone résidentielle sud — Cité Adhahra, Cité Basboussa"
+      },
+      "geometry": {
+        "type": "Polygon",
+        "coordinates": [[
+          [10.06, 33.83], [10.12, 33.83], [10.14, 33.85], [10.13, 33.87],
+          [10.08, 33.87], [10.06, 33.86], [10.05, 33.84], [10.06, 33.83]
+        ]]
+      }
+    },
+    {
+      "type": "Feature",
+      "properties": {
+        "name": "Mareth",
+        "baseRisk": 20,
+        "description": "Zone agricole côtière — éloignée de l'industrie"
+      },
+      "geometry": {
+        "type": "Polygon",
+        "coordinates": [[
+          [10.05, 33.66], [10.22, 33.65], [10.28, 33.68], [10.26, 33.75],
+          [10.18, 33.80], [10.10, 33.82], [10.04, 33.78], [10.03, 33.72],
+          [10.05, 33.66]
+        ]]
+      }
+    },
+    {
+      "type": "Feature",
+      "properties": {
+        "name": "El Hamma",
+        "baseRisk": 14,
+        "description": "Source thermale — très faible exposition industrielle"
+      },
+      "geometry": {
+        "type": "Polygon",
+        "coordinates": [[
+          [9.78, 33.87], [9.90, 33.85], [9.98, 33.88], [9.99, 33.93],
+          [9.95, 33.97], [9.85, 33.98], [9.78, 33.95], [9.76, 33.91],
+          [9.78, 33.87]
+        ]]
+      }
+    },
+    {
+      "type": "Feature",
+      "properties": {
+        "name": "Metouia",
+        "baseRisk": 25,
+        "description": "Délégation agricole — élevage et cultures céréalières"
+      },
+      "geometry": {
+        "type": "Polygon",
+        "coordinates": [[
+          [9.93, 33.96], [10.02, 33.97], [10.06, 34.00], [10.05, 34.06],
+          [9.99, 34.10], [9.92, 34.08], [9.88, 34.03], [9.90, 33.98],
+          [9.93, 33.96]
+        ]]
+      }
+    },
+    {
+      "type": "Feature",
+      "properties": {
+        "name": "Menzel El Habib",
+        "baseRisk": 16,
+        "description": "Zone rurale — faible impact industriel"
+      },
+      "geometry": {
+        "type": "Polygon",
+        "coordinates": [[
+          [9.60, 33.63], [9.72, 33.61], [9.80, 33.65], [9.79, 33.72],
+          [9.73, 33.78], [9.64, 33.77], [9.58, 33.71], [9.59, 33.66],
+          [9.60, 33.63]
+        ]]
+      }
+    },
+    {
+      "type": "Feature",
+      "properties": {
+        "name": "Matmata",
+        "baseRisk": 8,
+        "description": "Zone montagneuse berbère — très faible pollution"
+      },
+      "geometry": {
+        "type": "Polygon",
+        "coordinates": [[
+          [9.70, 33.38], [9.88, 33.35], [9.98, 33.40], [9.97, 33.52],
+          [9.88, 33.58], [9.75, 33.57], [9.68, 33.50], [9.68, 33.43],
+          [9.70, 33.38]
+        ]]
+      }
+    },
+    {
+      "type": "Feature",
+      "properties": {
+        "name": "Nouvelle Matmata",
+        "baseRisk": 10,
+        "description": "Zone rurale montagneuse"
+      },
+      "geometry": {
+        "type": "Polygon",
+        "coordinates": [[
+          [9.95, 33.42], [10.05, 33.40], [10.12, 33.45], [10.11, 33.55],
+          [10.03, 33.60], [9.96, 33.58], [9.92, 33.52], [9.93, 33.45],
+          [9.95, 33.42]
+        ]]
+      }
+    },
+    {
+      "type": "Feature",
+      "properties": {
+        "name": "El Ogla",
+        "baseRisk": 22,
+        "description": "Zone oasis intérieure"
+      },
+      "geometry": {
+        "type": "Polygon",
+        "coordinates": [[
+          [10.10, 33.58], [10.22, 33.57], [10.28, 33.62], [10.26, 33.70],
+          [10.18, 33.74], [10.10, 33.72], [10.06, 33.66], [10.08, 33.60],
+          [10.10, 33.58]
+        ]]
+      }
+    },
+    {
+      "type": "Feature",
+      "properties": {
+        "name": "Ouedhref",
+        "baseRisk": 12,
+        "description": "Zone rurale sud désertique"
+      },
+      "geometry": {
+        "type": "Polygon",
+        "coordinates": [[
+          [9.82, 33.18], [9.98, 33.15], [10.08, 33.20], [10.07, 33.33],
+          [9.98, 33.40], [9.85, 33.38], [9.78, 33.30], [9.80, 33.22],
+          [9.82, 33.18]
+        ]]
+      }
+    },
+    {
+      "type": "Feature",
+      "properties": {
+        "name": "Smar",
+        "baseRisk": 30,
+        "description": "Zone mixte agriculture et résidentiel"
+      },
+      "geometry": {
+        "type": "Polygon",
+        "coordinates": [[
+          [10.05, 33.77], [10.16, 33.76], [10.20, 33.80], [10.18, 33.85],
+          [10.12, 33.87], [10.06, 33.85], [10.03, 33.81], [10.05, 33.77]
+        ]]
+      }
+    }
+  ]
+}

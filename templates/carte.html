@@ -1,0 +1,809 @@
+<!DOCTYPE html>
+<html lang="fr">
+<head>
+  <meta charset="UTF-8">
+  <title>AI Healing Gabes</title>
+  <link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css"/>
+  <script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js"></script>
+  <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+  <link href="https://fonts.googleapis.com/css2?family=Share+Tech+Mono&family=Exo+2:wght@300;600;800&display=swap" rel="stylesheet">
+  <style>
+    :root {
+      --green:#00ff88; --yellow:#ffcc00; --red:#ff3355;
+      --blue:#00cfff; --bg:#050d12; --panel:#080f16;
+      --border:rgba(0,255,136,0.15);
+    }
+    * { margin:0; padding:0; box-sizing:border-box; }
+    body {
+      background:var(--bg); color:#c8f0d8;
+      font-family:'Exo 2',sans-serif;
+      height:100vh; display:flex; flex-direction:column; overflow:hidden;
+    }
+
+    /* HEADER */
+    #header {
+      display:flex; align-items:center; justify-content:space-between;
+      padding:10px 24px;
+      background:rgba(5,13,18,0.97);
+      border-bottom:1px solid var(--border);
+      z-index:100;
+    }
+    #header h1 {
+      font-size:1rem; font-weight:800; letter-spacing:3px;
+      text-transform:uppercase; color:var(--green);
+      text-shadow:0 0 20px rgba(0,255,136,0.5);
+    }
+    .pulse-dot {
+      width:8px; height:8px; border-radius:50%;
+      background:var(--green); display:inline-block;
+      margin-right:8px; animation:pulse 1.5s infinite;
+    }
+    @keyframes pulse {
+      0%,100%{box-shadow:0 0 0 0 rgba(0,255,136,0.7)}
+      50%{box-shadow:0 0 0 6px rgba(0,255,136,0)}
+    }
+    .hstats { display:flex; gap:20px; align-items:center; }
+    .hstat { text-align:center; }
+    .hstat-val { font-family:'Share Tech Mono',monospace; font-size:1.1rem; }
+    .hstat-lbl { font-size:0.6rem; letter-spacing:2px; color:#4a7a5a; text-transform:uppercase; }
+    .freshness {
+      font-size:0.66rem; color:#8cc8a6;
+      border:1px solid var(--border); border-radius:999px;
+      padding:5px 12px; font-family:'Share Tech Mono',monospace;
+    }
+    .top-btn {
+      background:rgba(0,255,136,0.08); color:#d2ffe6;
+      border:1px solid var(--border); font-size:0.68rem;
+      padding:6px 12px; border-radius:999px; cursor:pointer;
+      font-family:'Share Tech Mono',monospace; letter-spacing:1px;
+    }
+    .top-btn:hover { background:rgba(0,255,136,0.16); }
+
+    /* MAIN */
+    #main { display:flex; flex:1; overflow:hidden; }
+    #map-wrap { flex:1; position:relative; }
+    #map { width:100%; height:100%; }
+
+    /* OVERLAYS */
+    #scan-overlay {
+      position:absolute; inset:0; pointer-events:none; z-index:400;
+      background:repeating-linear-gradient(0deg,transparent,transparent 2px,rgba(0,255,136,0.012) 2px,rgba(0,255,136,0.012) 4px);
+    }
+    #scan-line {
+      position:absolute; left:0; right:0; height:2px;
+      background:linear-gradient(90deg,transparent,rgba(0,255,136,0.5),transparent);
+      animation:scan 5s linear infinite; pointer-events:none; z-index:401;
+    }
+    @keyframes scan { 0%{top:0} 100%{top:100%} }
+
+    #tox-banner {
+      position:absolute; top:14px; left:50%; transform:translateX(-50%);
+      z-index:550; border:1px solid var(--border);
+      background:rgba(8,15,22,0.92); border-radius:999px;
+      padding:7px 18px; font-size:0.72rem; letter-spacing:1px;
+      color:#bdeed1; font-family:'Share Tech Mono',monospace;
+      backdrop-filter:blur(6px); white-space:nowrap;
+    }
+    .tox-normal { border-color:rgba(0,255,136,0.4)!important; color:#8dffbe!important; }
+    .tox-alert  { border-color:rgba(255,204,0,0.6)!important; color:#ffe08a!important; }
+    .tox-toxic  { border-color:rgba(255,51,85,0.8)!important; color:#ff9fb0!important; }
+
+    #ticker {
+      position:absolute; bottom:16px; left:50%; transform:translateX(-50%);
+      z-index:500; background:rgba(5,13,18,0.92);
+      border:1px solid var(--border); border-radius:4px;
+      padding:6px 20px; font-family:'Share Tech Mono',monospace;
+      font-size:0.75rem; color:var(--green); letter-spacing:2px;
+      pointer-events:none;
+    }
+
+    /* PANEL */
+    #panel {
+      width:330px; background:var(--panel);
+      border-left:1px solid var(--border);
+      display:flex; flex-direction:column;
+      overflow-y:auto; z-index:10;
+    }
+    #panel::-webkit-scrollbar { width:3px; }
+    #panel::-webkit-scrollbar-thumb { background:var(--border); }
+
+    .pcard { border-bottom:1px solid var(--border); padding:14px 16px; }
+    .pcard-title {
+      font-size:0.6rem; letter-spacing:3px; text-transform:uppercase;
+      color:#2a5a3a; margin-bottom:10px;
+      display:flex; align-items:center; gap:6px;
+    }
+    .pcard-title::before { content:''; display:block; width:20px; height:1px; background:var(--green); }
+
+    .metric { display:flex; justify-content:space-between; align-items:center; margin-bottom:6px; }
+    .metric-label { font-size:0.72rem; color:#4a7a5a; }
+    .metric-val { font-family:'Share Tech Mono',monospace; font-size:0.85rem; color:var(--green); }
+
+    .risk-badge {
+      display:inline-block; padding:3px 12px; border-radius:2px;
+      font-size:0.7rem; letter-spacing:2px; text-transform:uppercase;
+      font-weight:800; margin-bottom:10px;
+    }
+    .rb-red    { background:rgba(255,51,85,0.2);  color:var(--red);    border:1px solid var(--red); }
+    .rb-yellow { background:rgba(255,204,0,0.2);  color:var(--yellow); border:1px solid var(--yellow); }
+    .rb-green  { background:rgba(0,255,136,0.1);  color:var(--green);  border:1px solid var(--green); }
+
+    .zone-header {
+      font-size:0.9rem; font-weight:600; color:#fff;
+      margin-bottom:4px; padding:6px 10px;
+      background:rgba(0,255,136,0.08);
+      border-left:2px solid var(--green);
+      border-radius:0 4px 4px 0;
+    }
+    .zone-desc {
+      font-size:0.68rem; color:#4a8a6a;
+      margin-bottom:10px; padding:0 4px;
+      line-height:1.5;
+    }
+
+    .gas-row { margin-bottom:10px; }
+    .gas-header { display:flex; justify-content:space-between; margin-bottom:3px; }
+    .gas-name { font-size:0.75rem; color:#7ab89a; font-family:'Share Tech Mono',monospace; }
+    .gas-val  { font-size:0.75rem; color:var(--green); font-family:'Share Tech Mono',monospace; }
+    .gas-bar-bg { height:4px; background:rgba(255,255,255,0.05); border-radius:2px; overflow:hidden; }
+    .gas-bar-fill { height:100%; border-radius:2px; transition:width 0.8s ease; }
+    .bar-red    { background:linear-gradient(90deg,#ff335520,var(--red)); }
+    .bar-yellow { background:linear-gradient(90deg,#ffcc0020,var(--yellow)); }
+    .bar-green  { background:linear-gradient(90deg,#00ff8820,var(--green)); }
+
+    .phoenix-row { display:flex; justify-content:space-between; margin-bottom:7px; }
+    .phoenix-key { font-size:0.7rem; color:#3a6a4a; }
+    .phoenix-val { font-size:0.78rem; color:#b0f0c8; font-weight:600; text-align:right; max-width:170px; }
+
+    .anom-item {
+      padding:7px 10px; margin-bottom:5px;
+      border-left:2px solid var(--red);
+      background:rgba(255,51,85,0.05);
+      border-radius:0 4px 4px 0; cursor:pointer;
+    }
+    .anom-item:hover { background:rgba(255,51,85,0.12); }
+    .anom-date { font-family:'Share Tech Mono',monospace; font-size:0.72rem; color:var(--yellow); }
+    .anom-vals { font-size:0.68rem; color:#5a8a6a; margin-top:2px; }
+
+    .history-wrap {
+      margin-top:10px; border:1px solid var(--border);
+      border-radius:8px; background:rgba(3,12,16,0.7); padding:8px;
+    }
+    .trend-up   { color:var(--green)!important; }
+    .trend-down { color:var(--red)!important; }
+
+    .hint-msg {
+      text-align:center; padding:20px 10px;
+      font-size:0.75rem; color:#3a6a4a;
+      font-family:'Share Tech Mono',monospace;
+      line-height:1.8;
+    }
+
+    .leaflet-tile { filter:brightness(0.55) saturate(0.7) hue-rotate(60deg); }
+    .leaflet-container { background:#050d12; }
+
+    @media(max-width:980px) {
+      #main { flex-direction:column; }
+      #panel { width:100%; max-height:42vh; border-left:none; border-top:1px solid var(--border); }
+    }
+  </style>
+</head>
+<body>
+
+<div id="header">
+  <h1><span class="pulse-dot"></span>AI Healing Gabes — Surveillance Environnementale</h1>
+  <div class="hstats">
+    <div class="hstat">
+      <div class="hstat-val" id="s-total" style="color:var(--green)">—</div>
+      <div class="hstat-lbl">Jours analyses</div>
+    </div>
+    <div class="hstat">
+      <div class="hstat-val" id="s-critical" style="color:var(--red)">—</div>
+      <div class="hstat-lbl">Critiques</div>
+    </div>
+    <div class="hstat">
+      <div class="hstat-val" id="s-anomalies" style="color:var(--yellow)">—</div>
+      <div class="hstat-lbl">Anomalies IA</div>
+    </div>
+    <div class="hstat">
+      <div class="hstat-val" id="s-ndvi" style="color:var(--blue)">—</div>
+      <div class="hstat-lbl">NDVI moyen</div>
+    </div>
+    <div class="freshness" id="freshness">Flux: init...</div>
+    <button class="top-btn" id="perf-toggle">Mode Perf: OFF</button>
+  </div>
+</div>
+
+<div id="main">
+  <div id="map-wrap">
+    <div id="map"></div>
+    <div id="tox-banner" class="tox-normal">Toxicite live: chargement...</div>
+    <div id="scan-overlay"></div>
+    <div id="scan-line"></div>
+    <div id="ticker">AI HEALING GABES — SURVEILLANCE TEMPS REEL</div>
+  </div>
+
+  <div id="panel">
+
+    <!-- Zone selectionnee -->
+    <div class="pcard">
+      <div class="pcard-title">Zone selectionnee</div>
+      <div id="zone-header" class="zone-header">Cliquer sur une zone →</div>
+      <div id="zone-desc"   class="zone-desc"></div>
+      <div id="risk-badge-wrap"></div>
+      <div class="metric"><span class="metric-label">Date mesure</span><span class="metric-val" id="c-date">—</span></div>
+      <div class="metric"><span class="metric-label">NDVI</span><span class="metric-val" id="c-ndvi">—</span></div>
+      <div class="metric"><span class="metric-label">NDWI</span><span class="metric-val" id="c-ndwi">—</span></div>
+      <div class="metric"><span class="metric-label">Temperature</span><span class="metric-val" id="c-temp">—</span></div>
+      <div class="metric"><span class="metric-label">Humidite sol</span><span class="metric-val" id="c-soil">—</span></div>
+      <div class="metric"><span class="metric-label">Indice risque</span><span class="metric-val" id="c-risk">—</span></div>
+      <div class="metric"><span class="metric-label">Cause IA</span><span class="metric-val" id="c-cause">—</span></div>
+      <div class="metric"><span class="metric-label">Toxicite live</span><span class="metric-val" id="c-toxic">—</span></div>
+    </div>
+
+    <!-- Gaz -->
+    <div class="pcard">
+      <div class="pcard-title">Gaz atmospheriques</div>
+      <div class="gas-row">
+        <div class="gas-header"><span class="gas-name">SO2</span><span class="gas-val" id="g-so2">—</span></div>
+        <div class="gas-bar-bg"><div class="gas-bar-fill bar-red"    id="b-so2" style="width:0%"></div></div>
+      </div>
+      <div class="gas-row">
+        <div class="gas-header"><span class="gas-name">NO2</span><span class="gas-val" id="g-no2">—</span></div>
+        <div class="gas-bar-bg"><div class="gas-bar-fill bar-yellow" id="b-no2" style="width:0%"></div></div>
+      </div>
+      <div class="gas-row">
+        <div class="gas-header"><span class="gas-name">CO</span><span class="gas-val" id="g-co">—</span></div>
+        <div class="gas-bar-bg"><div class="gas-bar-fill bar-yellow" id="b-co"  style="width:0%"></div></div>
+      </div>
+      <div class="gas-row">
+        <div class="gas-header"><span class="gas-name">O3</span><span class="gas-val" id="g-o3">—</span></div>
+        <div class="gas-bar-bg"><div class="gas-bar-fill bar-green"  id="b-o3"  style="width:0%"></div></div>
+      </div>
+      <div class="gas-row">
+        <div class="gas-header"><span class="gas-name">AER</span><span class="gas-val" id="g-aer">—</span></div>
+        <div class="gas-bar-bg"><div class="gas-bar-fill bar-yellow" id="b-aer" style="width:0%"></div></div>
+      </div>
+    </div>
+
+    <!-- Phoenix -->
+    <div class="pcard">
+      <div class="pcard-title">Solution Phoenix</div>
+      <div class="phoenix-row"><span class="phoenix-key">Plante recommandee</span><span class="phoenix-val" id="p-plante">—</span></div>
+      <div class="phoenix-row"><span class="phoenix-key">Revenu estime</span><span class="phoenix-val" id="p-revenu">—</span></div>
+      <div class="phoenix-row"><span class="phoenix-key">Sequestration CO2</span><span class="phoenix-val" id="p-carbone">—</span></div>
+      <div class="phoenix-row"><span class="phoenix-key">Delai retour</span><span class="phoenix-val" id="p-delai">—</span></div>
+      <div class="phoenix-row"><span class="phoenix-key">Action prioritaire</span><span class="phoenix-val" id="p-action">—</span></div>
+    </div>
+
+    <!-- Prediction -->
+    <div class="pcard">
+      <div class="pcard-title">Prediction NDVI 30 jours</div>
+      <div class="metric"><span class="metric-label">NDVI actuel</span><span class="metric-val" id="pred-now">—</span></div>
+      <div class="metric"><span class="metric-label">NDVI predit</span><span class="metric-val" id="pred-fut">—</span></div>
+      <div class="metric"><span class="metric-label">Tendance</span><span class="metric-val" id="pred-trend">—</span></div>
+    </div>
+
+    <!-- Anomalies -->
+    <div class="pcard">
+      <div class="pcard-title">Anomalies IA detectees</div>
+      <div id="anom-list"><div class="hint-msg">Chargement...</div></div>
+    </div>
+
+    <!-- Historique -->
+    <div class="pcard">
+      <div class="pcard-title">Historique SO2 / NDVI</div>
+      <div class="history-wrap"><canvas id="history-chart" height="120"></canvas></div>
+    </div>
+
+  </div>
+</div>
+
+<script>
+// ================================================================
+// STATE
+// ================================================================
+const state = {
+  latestGlobal:   null,
+  liveZones:      {},
+  selectedZone:   null,
+  historyChart:   null,
+  anomalyMarkers: [],
+  anomalyTimer:   null,
+  perfMode:       false,
+  polygons:       {}   // id -> { layer, zone }
+};
+
+// ================================================================
+// ZONE METADATA — 13 delegations officielles du gouvernorat
+// ================================================================
+const ZONE_META = {
+  "Gabes Medina":     { baseRisk: 65, description: "Centre ville historique — exposition directe aux emissions industrielles" },
+  "Gabes Ouest":      { baseRisk: 78, description: "Proximite immediate de la zone industrielle GCT" },
+  "Gabes Sud":        { baseRisk: 42, description: "Zone residentielle sud — Cite Adhahra, Cite Basboussa" },
+  "Ghannouch":        { baseRisk: 92, description: "Zone industrielle GCT — source principale SO2 et phosphogypse" },
+  "El Hamma":         { baseRisk: 14, description: "Source thermale — tres faible exposition industrielle" },
+  "Mareth":           { baseRisk: 20, description: "Zone agricole cotiere — eloignee de l industrie" },
+  "Matmata":          { baseRisk:  8, description: "Zone montagneuse berbere — tres faible pollution" },
+  "Nouvelle Matmata": { baseRisk: 10, description: "Zone rurale montagneuse" },
+  "Metouia":          { baseRisk: 25, description: "Delegation agricole — elevage et cultures cerealieres" },
+  "Menzel El Habib":  { baseRisk: 16, description: "Zone rurale — faible impact industriel" },
+  "El Ogla":          { baseRisk: 22, description: "Zone oasis interieure" },
+  "Ouedhref":         { baseRisk: 12, description: "Zone rurale sud desertique" },
+  "Smar":             { baseRisk: 30, description: "Zone mixte agriculture et residentiel" }
+};
+
+// ================================================================
+// HELPERS
+// ================================================================
+function riskColor(r) {
+  if (r >= 70) return '#ff3355';
+  if (r >= 40) return '#ffcc00';
+  return '#00ff88';
+}
+function riskLabel(r) {
+  if (r >= 70) return 'CRITIQUE';
+  if (r >= 40) return 'DEGRADEE';
+  return 'SAINE';
+}
+function riskClass(r) {
+  if (r >= 70) return 'rb-red';
+  if (r >= 40) return 'rb-yellow';
+  return 'rb-green';
+}
+function riskEmoji(r) {
+  if (r >= 70) return '🔴';
+  if (r >= 40) return '🟡';
+  return '🟢';
+}
+
+function fetchJson(url, ms = 7000) {
+  const ctrl = new AbortController();
+  const tid  = setTimeout(() => ctrl.abort(), ms);
+  return fetch(url, { signal: ctrl.signal, cache: 'no-store' })
+    .then(r => { if (!r.ok) throw new Error(r.status); return r.json(); })
+    .finally(() => clearTimeout(tid));
+}
+
+function updateFreshness(dateText) {
+  const el = document.getElementById('freshness');
+  if (!dateText || dateText === 'N/A') { el.textContent = 'Flux: date inconnue'; return; }
+  const lag = Math.max(0, Math.floor((Date.now() - new Date(dateText)) / 86400000));
+  el.textContent = 'Flux: ' + dateText.slice(0, 10) + ' (' + lag + 'j)';
+}
+
+function updateToxBanner(level, score, zone) {
+  const el = document.getElementById('tox-banner');
+  el.classList.remove('tox-normal', 'tox-alert', 'tox-toxic');
+  const cls = level === 'NORMAL' ? 'tox-normal' : level === 'ALERTE' ? 'tox-alert' : 'tox-toxic';
+  el.classList.add(cls);
+  el.textContent = 'Toxicite live: ' + (level || 'N/A') + ' (' + parseFloat(score || 0).toFixed(1) + '/100) — Zone: ' + (zone || 'N/A');
+}
+
+// ================================================================
+// MAP INIT
+// ================================================================
+const map = L.map('map', { zoomControl: false }).setView([33.75, 9.95], 9);
+L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png', {
+  attribution: '© OSM', maxZoom: 18
+}).addTo(map);
+L.control.zoom({ position: 'bottomright' }).addTo(map);
+
+const anomalyLayer = L.layerGroup().addTo(map);
+
+// ================================================================
+// LOAD GEOJSON
+// ================================================================
+fetch('/static/gabes_delegations.geojson')
+  .then(r => {
+    if (!r.ok) throw new Error('GeoJSON non trouve: ' + r.status);
+    return r.json();
+  })
+  .then(geojson => {
+    const geoLayer = L.geoJSON(geojson, {
+      style: feature => {
+        const name = feature.properties.name;
+        const meta = ZONE_META[name] || { baseRisk: 30 };
+        const risk = feature.properties.baseRisk || meta.baseRisk;
+        return {
+          color:       riskColor(risk),
+          fillColor:   riskColor(risk),
+          fillOpacity: 0.28,
+          weight:      1.5,
+          opacity:     0.85
+        };
+      },
+      onEachFeature: (feature, layer) => {
+        const rawName = feature.properties.name;
+        const meta    = ZONE_META[rawName] || { baseRisk: feature.properties.baseRisk || 30, description: '' };
+        const zone    = {
+          id:          rawName.toLowerCase().replace(/\s+/g, '_'),
+          name:        rawName,
+          baseRisk:    meta.baseRisk,
+          description: meta.description
+        };
+
+        // Label centroid
+        const center = layer.getBounds().getCenter();
+        const labelIcon = L.divIcon({
+          className: '',
+          html: '<div style="' +
+            'font-family:Share Tech Mono,monospace;' +
+            'font-size:9px;' +
+            'color:' + riskColor(zone.baseRisk) + ';' +
+            'text-shadow:0 0 4px ' + riskColor(zone.baseRisk) + ',0 1px 2px #000;' +
+            'white-space:nowrap;font-weight:700;' +
+            'pointer-events:none;text-align:center;' +
+            '">' + rawName + '</div>',
+          iconAnchor: [50, 8]
+        });
+        L.marker(center, { icon: labelIcon, interactive: false }).addTo(map);
+
+        // Interactions
+        layer.on('click', () => selectZone(zone, layer));
+        layer.on('mouseover', () => {
+          if (!state.selectedZone || state.selectedZone.id !== zone.id) {
+            layer.setStyle({ fillOpacity: 0.50, weight: 2.5 });
+          }
+        });
+        layer.on('mouseout', () => {
+          if (!state.selectedZone || state.selectedZone.id !== zone.id) {
+            layer.setStyle({ fillOpacity: 0.28, weight: 1.5 });
+          }
+        });
+
+        state.polygons[zone.id] = { layer, zone };
+      }
+    }).addTo(map);
+
+    // Fit to Gabes governorate bounds
+    map.fitBounds(geoLayer.getBounds(), { padding: [30, 30] });
+
+    document.getElementById('ticker').textContent = 'GABES — ' + Object.keys(state.polygons).length + ' DELEGATIONS CHARGEES — CLIQUER POUR DETAIL';
+
+    // Auto-select Ghannouch (zone la plus critique)
+    setTimeout(() => {
+      const gct = state.polygons['ghannouch'];
+      if (gct) selectZone(gct.zone, gct.layer);
+    }, 1500);
+  })
+  .catch(err => {
+    console.error('GeoJSON error:', err);
+    document.getElementById('ticker').textContent = 'ERREUR: gabes_delegations.geojson introuvable — ' + err.message;
+  });
+
+// ================================================================
+// SELECT ZONE
+// ================================================================
+function selectZone(zone, layer) {
+  // Reset previous
+  if (state.selectedZone) {
+    const prev = state.polygons[state.selectedZone.id];
+    if (prev) {
+      prev.layer.setStyle({
+        color:       riskColor(prev.zone.baseRisk),
+        fillColor:   riskColor(prev.zone.baseRisk),
+        fillOpacity: 0.28,
+        weight:      1.5
+      });
+    }
+  }
+
+  state.selectedZone = zone;
+
+  // Highlight
+  layer.setStyle({
+    color:       '#ffffff',
+    fillColor:   riskColor(zone.baseRisk),
+    fillOpacity: 0.55,
+    weight:      3
+  });
+
+  // Scroll panel to top
+  document.getElementById('panel').scrollTop = 0;
+
+  // Update panel
+  document.getElementById('zone-header').textContent = riskEmoji(zone.baseRisk) + ' ' + zone.name;
+  document.getElementById('zone-desc').textContent   = zone.description;
+
+  renderZonePanel(zone);
+}
+
+// ================================================================
+// RENDER ZONE PANEL
+// ================================================================
+function renderZonePanel(zone) {
+  const g = state.latestGlobal;
+  if (!g) return;
+
+  const live = state.liveZones[zone.name] || {};
+  const tox  = (live.toxicity) || (g.toxicity) || {};
+
+  // Zone-specific risk computation
+  const globalRisk = parseFloat(g.health_risk || 0);
+  const liveToxRisk = parseFloat((tox).risk_score || 0);
+  const zoneRisk = Math.min(100,
+    zone.baseRisk * 0.50 +
+    globalRisk    * 0.30 +
+    liveToxRisk   * 0.20
+  );
+
+  // SO2 factor — GCT and Gabes Ouest are directly downwind
+  const so2Factor = zone.id === 'ghannouch' ? 2.8
+                  : zone.id === 'gabes_ouest' ? 1.6
+                  : zone.id === 'gabes_medina' ? 1.3
+                  : 1.0;
+
+  const so2  = parseFloat(live.so2_ug_m3 || g.SO2_live_ug_m3 || 0) * so2Factor;
+  const no2  = parseFloat(live.no2_ug_m3 || g.NO2_live_ug_m3 || 0);
+  const co   = parseFloat(live.co_ug_m3  || g.CO_live_ug_m3  || 0);
+  const o3   = parseFloat(live.o3_ug_m3  || g.O3_live_ug_m3  || 0);
+  const aer  = parseFloat(g.AER || 0);
+  const ndvi = Math.max(0, parseFloat(g.NDVI || 0) * (1.0 - zone.baseRisk / 280));
+
+  // Badge
+  document.getElementById('risk-badge-wrap').innerHTML =
+    '<span class="risk-badge ' + riskClass(zoneRisk) + '">' + riskEmoji(zoneRisk) + ' ' + riskLabel(zoneRisk) + '</span>';
+
+  // Metrics
+  document.getElementById('c-date').textContent  = (live.timestamp || g.date || '—').toString().slice(0, 10);
+  document.getElementById('c-ndvi').textContent  = ndvi.toFixed(4);
+  document.getElementById('c-ndwi').textContent  = parseFloat(g.NDWI || 0).toFixed(4);
+  document.getElementById('c-temp').textContent  = parseFloat(g.temp || 0).toFixed(1) + ' C';
+  document.getElementById('c-soil').textContent  = (parseFloat(g.soil_moisture || 0) * 100).toFixed(1) + '%';
+  document.getElementById('c-risk').textContent  = zoneRisk.toFixed(1) + ' / 100';
+  document.getElementById('c-cause').textContent = g.cause || 'N/A';
+  document.getElementById('c-toxic').textContent = (tox.level || 'N/A') + ' (' + parseFloat(tox.risk_score || 0).toFixed(1) + ')';
+  document.getElementById('pred-now').textContent = ndvi.toFixed(4);
+
+  // Gas bars
+  document.getElementById('g-so2').textContent = so2.toFixed(2) + ' ug/m3';
+  document.getElementById('g-no2').textContent = no2.toFixed(2) + ' ug/m3';
+  document.getElementById('g-co').textContent  = co.toFixed(1)  + ' ug/m3';
+  document.getElementById('g-o3').textContent  = o3.toFixed(1)  + ' ug/m3';
+  document.getElementById('g-aer').textContent = aer.toFixed(3);
+
+  document.getElementById('b-so2').style.width = Math.min(100, (so2 / 40)   * 100) + '%';
+  document.getElementById('b-no2').style.width = Math.min(100, (no2 / 25)   * 100) + '%';
+  document.getElementById('b-co').style.width  = Math.min(100, (co  / 4000) * 100) + '%';
+  document.getElementById('b-o3').style.width  = Math.min(100, (o3  / 100)  * 100) + '%';
+  document.getElementById('b-aer').style.width = Math.min(100, Math.max(0, (aer + 3) / 8 * 100)) + '%';
+
+  // Phoenix — zone-aware
+  let plante, revenu, carbone, delai, action;
+  if (zoneRisk >= 70) {
+    plante  = 'Atriplex halimione';
+    revenu  = '800 TND/an';
+    carbone = '4 T CO2/an';
+    delai   = '6 mois';
+    action  = 'Plantation urgente — barriere anti-pollution';
+  } else if (zoneRisk >= 40) {
+    plante  = 'Paulownia';
+    revenu  = '3 350 TND/an';
+    carbone = '12 T CO2/an';
+    delai   = '18 mois';
+    action  = 'Reboisement prioritaire — corridor ecologique';
+  } else {
+    plante  = 'Moringa oleifera';
+    revenu  = '1 200 TND/an';
+    carbone = '8 T CO2/an';
+    delai   = '12 mois';
+    action  = 'Surveillance normale — renforcement biodiversite';
+  }
+  document.getElementById('p-plante').textContent  = plante;
+  document.getElementById('p-revenu').textContent  = revenu;
+  document.getElementById('p-carbone').textContent = carbone;
+  document.getElementById('p-delai').textContent   = delai;
+  document.getElementById('p-action').textContent  = action;
+
+  // Update polygon color dynamically
+  const p = state.polygons[zone.id];
+  if (p && state.selectedZone && state.selectedZone.id === zone.id) {
+    p.layer.setStyle({ fillColor: riskColor(zoneRisk), fillOpacity: 0.55 });
+  }
+}
+
+// ================================================================
+// REFRESH POLYGON COLORS (called after live data update)
+// ================================================================
+function refreshPolygonColors() {
+  if (!state.latestGlobal) return;
+  const globalRisk = parseFloat(state.latestGlobal.health_risk || 0);
+
+  Object.values(state.polygons).forEach(({ layer, zone }) => {
+    if (state.selectedZone && state.selectedZone.id === zone.id) return;
+    const live     = state.liveZones[zone.name] || {};
+    const toxRisk  = parseFloat((live.toxicity || {}).risk_score || 0);
+    const dynRisk  = Math.min(100, zone.baseRisk * 0.50 + globalRisk * 0.30 + toxRisk * 0.20);
+    const color    = riskColor(dynRisk);
+    layer.setStyle({ color, fillColor: color, fillOpacity: 0.28, weight: 1.5 });
+  });
+}
+
+// ================================================================
+// ANOMALY MARKERS
+// ================================================================
+function addAnomalyMarkers(anomalies) {
+  state.anomalyMarkers.forEach(m => anomalyLayer.removeLayer(m));
+  state.anomalyMarkers = [];
+  if (state.anomalyTimer) { clearInterval(state.anomalyTimer); state.anomalyTimer = null; }
+
+  anomalies.forEach(a => {
+    const lat = 33.55 + Math.random() * 0.55;
+    const lng = 9.60  + Math.random() * 0.65;
+    const m   = L.circleMarker([lat, lng], {
+      radius: 6, color: '#ff3355', fillColor: '#ff3355', fillOpacity: 0.85, weight: 1
+    }).addTo(anomalyLayer);
+    state.anomalyMarkers.push(m);
+    m.bindPopup(
+      '<div style="font-family:Share Tech Mono,monospace;font-size:11px;color:#ff3355;background:#050d12;padding:6px">' +
+      '<b>ANOMALIE IA</b><br>' +
+      'Date: ' + a.date + '<br>' +
+      'Cause: ' + a.cause + '<br>' +
+      'Score: ' + parseFloat(a.anomaly_score).toFixed(3) + '<br>' +
+      'SO2: ' + (parseFloat(a.SO2_column_number_density) * 1e6).toFixed(2) + '<br>' +
+      'NDVI: ' + parseFloat(a.NDVI).toFixed(4) +
+      '</div>'
+    );
+  });
+
+  if (!state.perfMode && state.anomalyMarkers.length > 0) {
+    let big = true;
+    state.anomalyTimer = setInterval(() => {
+      big = !big;
+      state.anomalyMarkers.forEach(m => m.setStyle({ radius: big ? 8 : 5, fillOpacity: big ? 0.9 : 0.35 }));
+    }, 900);
+  }
+}
+
+// ================================================================
+// API CALLS
+// ================================================================
+async function refreshCore() {
+  try {
+    const [latest, stats] = await Promise.all([
+      fetchJson('/api/latest'),
+      fetchJson('/api/stats')
+    ]);
+    state.latestGlobal = latest;
+
+    updateFreshness(latest.live_timestamp || latest.date);
+    const tox = latest.toxicity || {};
+    updateToxBanner(tox.level, tox.risk_score, latest.live_worst_zone);
+
+    document.getElementById('s-total').textContent     = Number(stats.total_days    || 0).toLocaleString();
+    document.getElementById('s-critical').textContent  = Number(stats.critical_days || 0);
+    document.getElementById('s-anomalies').textContent = Number(stats.anomaly_days  || 0);
+    document.getElementById('s-ndvi').textContent      = Number(stats.avg_ndvi      || 0).toFixed(4);
+
+    refreshPolygonColors();
+    if (state.selectedZone) renderZonePanel(state.selectedZone);
+
+  } catch (e) {
+    document.getElementById('ticker').textContent = 'ERREUR API — verifiez serveur Flask';
+  }
+}
+
+async function refreshLive() {
+  try {
+    const zones  = await fetchJson('/api/live/zones');
+    const mapped = {};
+    zones.forEach(z => { mapped[z.zone] = z; });
+    state.liveZones = mapped;
+    refreshPolygonColors();
+    if (state.selectedZone) renderZonePanel(state.selectedZone);
+  } catch (e) { /* keep last */ }
+}
+
+async function refreshPrediction() {
+  try {
+    const d  = await fetchJson('/api/predict');
+    document.getElementById('pred-fut').textContent = parseFloat(d.predicted_ndvi || 0).toFixed(4);
+    const el = document.getElementById('pred-trend');
+    if (d.trend === 'improving') { el.textContent = 'Amelioration'; el.className = 'metric-val trend-up'; }
+    else                         { el.textContent = 'Degradation';  el.className = 'metric-val trend-down'; }
+  } catch (e) {
+    document.getElementById('pred-fut').textContent   = '—';
+    document.getElementById('pred-trend').textContent = 'Indisponible';
+  }
+}
+
+async function refreshAnomalies() {
+  try {
+    const data = await fetchJson('/api/anomalies/live?recent_days=365');
+    const list = document.getElementById('anom-list');
+    list.innerHTML = '';
+    if (!data.length) {
+      list.innerHTML = '<div class="hint-msg">Aucune anomalie recente</div>';
+      return;
+    }
+    data.forEach(a => {
+      const div = document.createElement('div');
+      div.className = 'anom-item';
+      div.innerHTML =
+        '<div class="anom-date">' + a.date + '</div>' +
+        '<div class="anom-vals">SO2: ' + (parseFloat(a.SO2_column_number_density) * 1e6).toFixed(2) +
+        ' | NDVI: ' + parseFloat(a.NDVI).toFixed(3) +
+        ' | ' + a.cause + '</div>';
+      list.appendChild(div);
+    });
+    addAnomalyMarkers(data);
+  } catch (e) {
+    document.getElementById('anom-list').innerHTML = '<div class="hint-msg">Anomalies indisponibles</div>';
+  }
+}
+
+async function refreshHistory() {
+  try {
+    const data  = await fetchJson('/api/history', 12000);
+    const last  = data.slice(-365);
+    const labels = last.map(r => (r.date || '').slice(0, 10));
+    const so2    = last.map(r => parseFloat(r.SO2_column_number_density || 0) * 1e6);
+    const ndvi   = last.map(r => parseFloat(r.NDVI || 0));
+    const ctx    = document.getElementById('history-chart').getContext('2d');
+    if (state.historyChart) state.historyChart.destroy();
+    state.historyChart = new Chart(ctx, {
+      type: 'line',
+      data: {
+        labels,
+        datasets: [
+          { label: 'SO2', data: so2,  borderColor: '#ff3355', backgroundColor: 'rgba(255,51,85,0.08)',  borderWidth: 1.5, pointRadius: 0, yAxisID: 'ySo2',  tension: 0.25 },
+          { label: 'NDVI', data: ndvi, borderColor: '#00ff88', backgroundColor: 'rgba(0,255,136,0.08)', borderWidth: 1.5, pointRadius: 0, yAxisID: 'yNdvi', tension: 0.25 }
+        ]
+      },
+      options: {
+        responsive: true, maintainAspectRatio: false,
+        plugins: { legend: { labels: { color: '#bdeed1', boxWidth: 10 } } },
+        scales: {
+          x:     { ticks: { color: '#6ea887', maxTicksLimit: 8 }, grid: { color: 'rgba(120,180,140,0.08)' } },
+          ySo2:  { position: 'left',  ticks: { color: '#ff9fb0' }, grid: { color: 'rgba(120,180,140,0.08)' } },
+          yNdvi: { position: 'right', ticks: { color: '#8dffbe' }, grid: { drawOnChartArea: false }, min: 0, max: 1 }
+        }
+      }
+    });
+  } catch (e) { /* keep previous */ }
+}
+
+// ================================================================
+// TICKER
+// ================================================================
+const tickerMsgs = [
+  'AI HEALING GABES — SURVEILLANCE TEMPS REEL',
+  'CLIQUER SUR UNE DELEGATION POUR LE DETAIL',
+  'DONNEES SENTINEL-5P + ERA5 + MODIS — 6 ANS',
+  'MODELES: ISOLATION FOREST + GRADIENT BOOSTING',
+  'PHOENIX ENGINE — RECOMMANDATIONS PAR ZONE'
+];
+let tickerIdx = 0;
+setInterval(() => {
+  tickerIdx = (tickerIdx + 1) % tickerMsgs.length;
+  document.getElementById('ticker').textContent = tickerMsgs[tickerIdx];
+}, 4500);
+
+// ================================================================
+// PERF MODE
+// ================================================================
+document.getElementById('perf-toggle').addEventListener('click', () => {
+  state.perfMode = !state.perfMode;
+  document.getElementById('perf-toggle').textContent = 'Mode Perf: ' + (state.perfMode ? 'ON' : 'OFF');
+  document.getElementById('scan-overlay').style.display = state.perfMode ? 'none' : '';
+  document.getElementById('scan-line').style.display    = state.perfMode ? 'none' : '';
+});
+
+// ================================================================
+// BOOT
+// ================================================================
+refreshCore();
+refreshLive();
+refreshPrediction();
+refreshAnomalies();
+refreshHistory();
+
+setInterval(refreshCore,       10000);
+setInterval(refreshLive,       15000);
+setInterval(refreshPrediction, 60000);
+setInterval(refreshAnomalies,  60000);
+setInterval(refreshHistory,   300000);
+</script>
+</body>
+</html>

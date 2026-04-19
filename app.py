@@ -1,12 +1,21 @@
-from flask import Flask, send_from_directory
+from flask import Flask, render_template
 
-app = Flask(__name__, static_folder="static")
+from routes import register_blueprints
+from services.data_loader import get_dataframe
 
-
-@app.route("/")
-def home():
-    return send_from_directory(app.static_folder, "carte.html")
+app = Flask(__name__)
 
 
-if __name__ == "__main__":
+@app.route('/')
+def index():
+    return render_template('carte.html')
+
+
+register_blueprints(app)
+
+# Warm dataset cache on startup.
+get_dataframe(force=True)
+
+
+if __name__ == '__main__':
     app.run(debug=True)

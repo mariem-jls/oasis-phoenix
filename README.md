@@ -1,7 +1,7 @@
 # 🌿 Oasis Phoenix — AI Healing Gabès
 
 <p align="center">
-  <img src="static/logo_phoenix.png" alt="Oasis Phoenix Logo" width="180"/>
+  <img src="static/phoenix.png.png" alt="Oasis Phoenix Logo" width="180"/>
 </p>
 
 <p align="center">

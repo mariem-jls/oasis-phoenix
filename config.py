@@ -10,7 +10,7 @@ def resolve_base_dir():
         return os.path.abspath(env_base)
     return BASE_DIR
 
-
+DATA_PATH 
 ACTIVE_BASE_DIR = resolve_base_dir()
 DATA_PATH = os.path.join(ACTIVE_BASE_DIR, 'data', 'combined_clean.csv')
 MODELS_DIR = os.path.join(ACTIVE_BASE_DIR, 'models')

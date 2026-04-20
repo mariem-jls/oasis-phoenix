@@ -312,8 +312,7 @@ def stats_signalements():
         par_type = conn.execute("SELECT type_env, COUNT(*) FROM signalements GROUP BY type_env").fetchall()
     return jsonify({"total": total, "critiques": critiques, "recent_24h": recent, "clusters_actifs": clusters, "alertes_total": alertes, "par_type": {r[0]: r[1] for r in par_type}})
 
-get_dataframe(force=True)
 
 if __name__ == '__main__':
     print("🌿 OASIS PHOENIX — Integrated Gabès Voix")
-    app.run(debug=True, port=5001)
+    app.run(debug=True, port=5001)

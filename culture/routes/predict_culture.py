@@ -22,10 +22,24 @@ def recommend():
         return jsonify({"error": "Coordonnées invalides"}), 400
 
     try:
-        soil    = get_soil(lat, lon)
-        climat  = get_climate(lat, lon)
-        nasa    = get_nasa(lat, lon)
+        soil = get_soil(lat, lon)
+    except Exception as e:
+        print(f"ERREUR get_soil : {e}")
+        return jsonify({"error": "Erreur lors de la récupération des données du sol", "details": str(e)}), 500
 
+    try:
+        climat = get_climate(lat, lon)
+    except Exception as e:
+        print(f"ERREUR get_climate : {e}")
+        return jsonify({"error": "Erreur lors de la récupération des données climatiques", "details": str(e)}), 500
+
+    try:
+        nasa = get_nasa(lat, lon)
+    except Exception as e:
+        print(f"ERREUR get_nasa : {e}")
+        return jsonify({"error": "Erreur lors de la récupération des données de la NASA", "details": str(e)}), 500
+
+    try:
         recommandations = predict(soil, climat, nasa, top_n=top_n)
 
         prix_usd = get_carbon_price_usd()
